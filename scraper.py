@@ -144,8 +144,59 @@ def scrape_pbp(game_id, user_agent):
     clean_df['is_block'] = np.where(clean_df.HOMEDESCRIPTION.str.contains('BLOCK') |
                                     clean_df.VISITORDESCRIPTION.str.contains('BLOCK'),
                                     1, 0)
+#parse mtype column to get all the shot types being taken
+    def parse_shot_types(row):
+        '''
+        function to parse what type of shot is being taken
 
-#TODO Clean time to get a seconds elapsed column
+        Inputs:
+        row - pandas row of play by play dataframe
+
+        Outputs:
+        shot_type - returns a shot type of the values hook, jump, layup, dunk, tip
+        '''
+        if pd.isnull(row['shot_made']) == 0:
+            if 'Layup' in row['de']:
+                return 'layup'
+            elif 'Hook' in row['de']:
+                return 'hook'
+            elif 'Dunk' in row['de']:
+                return 'dunk'
+            elif 'Free' in row['de']:
+                return 'free'
+            else:
+                return 'jump'
+        else:
+            return np.nan
+    clean_df['shot_type'] = clean_df.apply(parse_shot_types, axis=1)
+
+#Clean time to get a seconds elapsed column
+
+    def create_seconds_elapsed(row):
+        '''
+        this function parses the string time column and converts it into game
+        seconds elapsed
+
+        Inputs:
+        row - row of play by play dataframe
+
+        Outputs:
+        time_in_seconds - the elapsed game time expressed in seconds
+        '''
+
+        time = row['PCTIMESTRING'].strip()
+        time_list = time.split(':')
+        max_time = 720
+        ot_max_time = 300
+
+        if row['PERIOD'] in [1,2,3,4]:
+            time_in_seconds = (max_time - (int(time_list[0]) * 60 + int(time_list[1]))) + (720 * (int(row['PERIOD']) - 1))
+        elif row['PERIOD'] > 4:
+            time_in_seconds = (ot_max_time - (int(time_list[0]) * 60 + int(time_list[1]))) + (300 * (int(row['PERIOD']) - 5)) + 2880
+
+        return time_in_seconds
+
+    clean_df['seconds_elapsed'] = clean_df.apply(create_seconds_elapsed, axis=1)
 
 
 #TODO parse mtype column to get all the shot types being taken
