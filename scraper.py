@@ -198,7 +198,50 @@ def scrape_pbp(game_id, user_agent):
 
     clean_df['seconds_elapsed'] = clean_df.apply(create_seconds_elapsed, axis=1)
 
+#determine whether shot was a three pointer
 
+    clean_df['is_three'] = np.where(clean_df['de'].str.contains('3pt'), 1, 0)
+
+#determine points earned
+
+    def calc_points_made(row):
+        '''
+        function to calculate the points earned by a team with each shot made
+
+        Inputs:
+        row - row of pbp dataframe
+
+        Outputs - value of shot made
+        '''
+
+        if row['is_three'] == 1 and row['shot_made'] == 1:
+            return 3
+        elif row['is_three'] == 0 and row['shot_made'] == 1 and row['shot_type'] != 'free':
+            return 2
+        elif row['shot_type'] == 'free':
+            return 1
+        else:
+            return 0
+
+    clean_df['points_made'] = clean_df.apply(calc_points_made, axis=1)
+
+#create columns that determine if rebound is offenseive or deffensive
+
+    clean_df['is_d_rebound'] = np.where((clean_df['event_type_de'] == 'rebound') &
+                                         (clean_df['event_team'] != clean_df['event_team'].shift(1)), 1, 0)
+
+    clean_df['is_o_rebound'] = np.where((clean_df['event_type_de'] == 'rebound') &
+                                        (clean_df['event_team'] == clean_df['event_team'].shift(1))
+                                        & (clean_df['event_type_de'].shift(1) != 'free-throw'), 1, 0)
+
+#create columns to determine turnovers and steals
+
+    clean_df['is_turnover'] = np.where(clean_df['de'].str.contains('Turnover'), 1, 0)
+    clean_df['is_steal'] = np.where(clean_df['de'].str.contains('Steal'), 1, 0)
+
+#TODO determine what type of fouls are being commited
+
+#TODO determine if a shot is a putback off an offensive reboundk
 #TODO parse mtype column to get all the shot types being taken
 
 
