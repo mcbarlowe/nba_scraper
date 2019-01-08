@@ -198,6 +198,9 @@ def scrape_pbp(game_id, user_agent):
 
     clean_df['seconds_elapsed'] = clean_df.apply(create_seconds_elapsed, axis=1)
 
+#calculate event length of each even in seconds
+    clean_df['event_length'] =  clean_df['seconds_elapsed'] - clean_df['seconds_elapsed'].shift(1)
+
 #determine whether shot was a three pointer
 
     clean_df['is_three'] = np.where(clean_df['de'].str.contains('3pt'), 1, 0)
@@ -239,9 +242,40 @@ def scrape_pbp(game_id, user_agent):
     clean_df['is_turnover'] = np.where(clean_df['de'].str.contains('Turnover'), 1, 0)
     clean_df['is_steal'] = np.where(clean_df['de'].str.contains('Steal'), 1, 0)
 
-#TODO determine what type of fouls are being commited
+#determine what type of fouls are being commited
 
-#TODO determine if a shot is a putback off an offensive reboundk
+    def parse_foul(row):
+        '''
+        function to determine what type of foul is being commited by the player
+
+        Input:
+        row - row of nba play by play
+
+        Output:
+        foul_type - the foul type of the fould commited by the player
+        '''
+
+        if 'Shooting' in row['de']:
+            return 'shooting'
+        if 'Personal' in row['de']:
+            return 'personal'
+        if 'Loose Ball' in row['de']:
+            return 'loose_ball'
+        if 'Technical' in row['de']:
+            return 'technical'
+        if 'Charge' in row['de']:
+            return 'charge'
+        if 'Defense 3 Second' in row['de']:
+            return '3 second'
+        else:
+            return np.nan
+
+    clean_df['foul_type'] = clean_df.apply(parse_foul, axis=1)
+
+# determine if a shot is a putback off an offensive reboundk
+    clean_df['is_putback'] = np.where((clean_df['is_o_rebound'].shift(1) == 1) &
+                                      (clean_df['event_length'] <= 3), 1, 0)
+
 #TODO parse mtype column to get all the shot types being taken
 
 
