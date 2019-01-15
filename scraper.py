@@ -267,6 +267,10 @@ def scrape_pbp(game_id, user_agent):
             return 'charge'
         if 'Defense 3 Second' in row['de']:
             return '3 second'
+        if 'Flagrant' in row['de']:
+            return 'flagrant'
+        if 'Flagrant 2' in row['de']:
+            return 'flagrant 2'
         else:
             return np.nan
 
@@ -276,11 +280,65 @@ def scrape_pbp(game_id, user_agent):
     clean_df['is_putback'] = np.where((clean_df['is_o_rebound'].shift(1) == 1) &
                                       (clean_df['event_length'] <= 3), 1, 0)
 
+#this part gets the lines probably should put this in a function
+#since I will need to loop over each period and match them up
+
+    home_lineup_api = ('https://stats.nba.com/stats/leaguedashlineups?Conference=&'
+                       f'DateFrom={game_date}&DateTo={game_date}&Division=&'
+                       'GameSegment=&GroupQuantity=5&LastNGames=0&LeagueID=&Location=&'
+                       f'MeasureType=Base&Month=0&OpponentTeamID={team_id}&Outcome=&PORound=&'
+                       f'PaceAdjust=N&PerMode=Totals&Period={period}&PlusMinus=N&Rank=N&'
+                       'Season=2018-19&SeasonSegment=&SeasonType=Regular+'
+                       'Season&ShotClockRange=&TeamID=&VsConference=&VsDivision=')
+
+
+    home_lineup_req = requests.get(home_lineup_api, headers=user_agent)
+    home_lineup_dict = home_lineup_req.json()
+
+#extract the player ids of each lineup
+    lineups = []
+    for lineup in home_lineup_dict['resultSets'][0]['rowSet']:
+        lineups.append([lineup[1]])
+
+#clean the id strings into a list of ids for each lineup
+    for x in range(len(lineups)):
+        print(lineups[x][0])
+        lineups[x] = list(filter(None,lineups[x][0].split('-')))
+
 #TODO parse mtype column to get all the shot types being taken
 
 
 #TODO create columns to tell which players are on the court for every given event
 #probably need to get starting lineups and player ids of each quarter for this and join on period starts
+
+#this pulls out the starting lineups from the play by play if every player
+#on the court has done something that is recorded by the play by play
+#if not then I will need to check the players against the lineups returned
+#from the api and weed out which one doesn't fit. This needs to be repeated
+#for every period
+    subs_df = clean_df[(clean_df.event_type_de == 'substitution') & (clean_df.PERIOD == 1)]
+    away_subs = subs_df[pd.isnull(subs_df.VISITORDESCRIPTION) == 0]
+    home_subs = subs_df[pd.isnull(subs_df.HOMEDESCRIPTION) == 0]
+    away_subs_first_sub = away_subs.index[0]
+    home_subs_first_sub = home_subs.index[0]
+
+    away_starting_line = (clean_df[(clean_df.event_team == away_team_abbrev)
+                                   & (~pd.isnull(clean_df.PLAYER1_NAME))
+                                   & (clean_df.PLAYER1_TEAM_ABBREVIATION == away_team_abbrev)]
+                                    .loc[:away_subs_first_sub-1, :]['PLAYER1_ID'].unique())
+
+    home_starting_line = (clean_df[(clean_df.event_team == home_team_abbrev)
+                                   & (~pd.isnull(clean_df.PLAYER1_NAME))
+                                   & (clean_df.PLAYER1_TEAM_ABBREVIATION == home_team_abbrev)]
+                                    .loc[:home_subs_first_sub-1, :]['PLAYER1_ID'].unique())
+
+    home_starting_line = [x for x in home_starting_line if x not in away_starting_line]
+    away_starting_line = [x for x in away_starting_line if x not in home_starting_line]
+
+#if the starting lines are != 5 then i need to check them against lineups from
+#the api and see which ones are ruled out. If more than one of the lineups is
+#possible then I need to get the id of the first player subbed and filter that way
+
 
 #this is the api endpoint to get the starting lineup for each respective
 #period. It takes a team id in the OpponentTeamID variable, a period number
