@@ -7,9 +7,7 @@ Email: matt@barloweanalytics.com
 This file contains the main functions to scrape and compile the NBA api and
 return a CSV file of the pbp for the provided game
 '''
-import json
 import requests
-import bs4
 import pandas as pd
 import numpy as np
 
@@ -22,13 +20,15 @@ shot_type_dict = {58: 'turnaround hook shot', 5: 'layup', 6: 'driving layup',
                   96: 'turnaround bank hook shot', 108: 'cutting dunk shot',
                   79: 'pullup jump shot', 72: 'putback layup', 1: 'jump shot',
                   57: 'driving hook shot', 75: 'driving finger roll layup',
-                  76: 'running finger roll layup', 79: '3pt shot', 80: '3pt shot',
-                  2: '3pt shot', 3: 'hook shot', 98: 'cutting layup', 67: 'hook bank shot',
+                  76: 'running finger roll layup',  80: 'step back jump shot',
+                  3: 'hook shot', 98: 'cutting layup', 67: 'hook bank shot',
                   101: 'driving floating jump shot', 102: 'driving floating bank shot jump shot',
                   73: 'driving reverse layup', 63: 'fadeaway jump shot', 47: 'turnaround jump shot',
                   52: 'alley oop dunk', 97: 'tip layup', 66: 'jump bank shot',
                   50: 'running dunk shot', 41: 'running layup', 93: 'driving bank hook shot',
-                  87: 'putback dunk shot', 99:'cutting finger roll layup'
+                  87: 'putback dunk shot', 99:'cutting finger roll layup',
+                  86: 'turnaround fadeaway', 78: 'floating jump shot', 9: 'driving dunk',
+                  74: 'running reverse layup', 44: 'reverse layup', 71: 'finger roll layup'
                   }
 
 #this dictionary will categorize the event types that happen in the NBA
@@ -127,15 +127,15 @@ def create_seconds_elapsed(row):
     time_in_seconds - the elapsed game time expressed in seconds
     '''
 
-    time = row['PCTIMESTRING'].strip()
+    time = row['pctimestring'].strip()
     time_list = time.split(':')
     max_time = 720
     ot_max_time = 300
 
-    if row['PERIOD'] in [1,2,3,4]:
-        time_in_seconds = (max_time - (int(time_list[0]) * 60 + int(time_list[1]))) + (720 * (int(row['PERIOD']) - 1))
-    elif row['PERIOD'] > 4:
-        time_in_seconds = (ot_max_time - (int(time_list[0]) * 60 + int(time_list[1]))) + (300 * (int(row['PERIOD']) - 5)) + 2880
+    if row['period'] in [1,2,3,4]:
+        time_in_seconds = (max_time - (int(time_list[0]) * 60 + int(time_list[1]))) + (720 * (int(row['period']) - 1))
+    elif row['period'] > 4:
+        time_in_seconds = (ot_max_time - (int(time_list[0]) * 60 + int(time_list[1]))) + (300 * (int(row['period']) - 5)) + 2880
 
     return time_in_seconds
 
@@ -230,13 +230,18 @@ def scrape_pbp(game_id, user_agent=user_agent):
 
 #create an event team colum
     clean_df['event_team'] = np.where(clean_df['homedescription'].isnull(),
-                                    clean_df['home_team_abbrev'], clean_df['away_team_abbrev'])
+                                      clean_df['home_team_abbrev'],
+                                      clean_df['away_team_abbrev'])
 
 #create and event type description column
     clean_df['event_type_de'] = clean_df[['etype']].replace({'etype': event_type_dict})
 
+#create and shot type description column
+    clean_df['shot_type_de'] = clean_df[['eventmsgtype', 'eventmsgactiontype']]\
+                                .apply(lambda x: shot_type_dict[int(x['eventmsgactiontype'])]
+                                       if np.isin(x['eventmsgtype'],[1,2]) else np.nan, axis=1)
 #create an event team colum
-    clean_df['event_team'] = np.where(clean_df['HOMEDESCRIPTION'].isnull(),
+    clean_df['event_team'] = np.where(clean_df['homedescription'].isnull(),
                                       clean_df['home_team_abbrev'],
                                       clean_df['away_team_abbrev'])
 
@@ -244,8 +249,8 @@ def scrape_pbp(game_id, user_agent=user_agent):
     clean_df['shot_made'] = clean_df.apply(made_shot, axis=1)
 
 #create a column that says whether the shot was blocked or not
-    clean_df['is_block'] = np.where(clean_df.HOMEDESCRIPTION.str.contains('BLOCK') |
-                                    clean_df.VISITORDESCRIPTION.str.contains('BLOCK'),
+    clean_df['is_block'] = np.where(clean_df['homedescription'].str.contains('BLOCK') |
+                                    clean_df['visitordescription'].str.contains('BLOCK'),
                                     1, 0)
 #parse mtype column to get all the shot types being taken
     clean_df['shot_type'] = clean_df.apply(parse_shot_types, axis=1)
