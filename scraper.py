@@ -15,6 +15,15 @@ import pandas as pd
 # have to pass this to the requests function or the api will return a 403 code
 user_agent = {'User-agent': 'Mozilla/5.0'}
 
+#gameids that are regular season ids start with 002 while preseason starts
+#with 001. the next two digits are the year represented by the first year
+#in the sequence so for the 20172018 season it would be 17 and 20182019 it
+#would be 18 etc. 004 represents the playoffs
+schedule_api = f'http://data.nba.com/data/10s/v2015/json/mobile_teams/nba/{season}/league/00_full_schedule.json'
+
+#this api goes back to 20152016 season maybe use this one
+#sched_api = 'http://data.nba.net/data/10s/prod/v1/{season}/schedule.json'
+
 #this will catalog the shot types recorded in the NBA play by play
 #not sure how accurate this is it seems to change for the same shots
 shot_type_dict = {58: 'turnaround hook shot', 5: 'layup', 6: 'driving layup',
@@ -52,7 +61,7 @@ def scrape_pbp(game_id, user_agent=user_agent):
     '''
 
 #hard coding these in for testing purposes
-    v2_api_url = 'https://stats.nba.com/stats/playbyplayv2?EndPeriod=10&EndRange=55800&GameID=0021800549&RangeType=2&Season=2018-19&SeasonType=Regular+Season&StartPeriod=1&StartRange=0kk'
+    v2_api_url = 'https://stats.nba.com/stats/playbyplayv2?EndPeriod=10&EndRange=55800&GameID=0021800549&RangeType=2&Season=2018-19&SeasonType=Regular+Season&StartPeriod=1&StartRange=0'
     pbp_api_url = 'https://data.nba.com/data/10s/v2015/json/mobile_teams/nba/2018/scores/pbp/0021800549_full_pbp.json'
 
 # this will be the main url used for the v2 api url once testing is done
