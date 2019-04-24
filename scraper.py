@@ -37,7 +37,9 @@ shot_type_dict = {58: 'turnaround hook shot', 5: 'layup', 6: 'driving layup',
                   50: 'running dunk shot', 41: 'running layup', 93: 'driving bank hook shot',
                   87: 'putback dunk shot', 99:'cutting finger roll layup',
                   86: 'turnaround fadeaway', 78: 'floating jump shot', 9: 'driving dunk',
-                  74: 'running reverse layup', 44: 'reverse layup', 71: 'finger roll layup'
+                  74: 'running reverse layup', 44: 'reverse layup', 71: 'finger roll layup',
+                  43: 'alley oop layup', 7: 'dunk', 103: 'running pull up jump shot',
+                  110: 'running reverse dunk', 107: 'tip dunk', 51: 'reverse dunk'
                   }
 
 #this dictionary will categorize the event types that happen in the NBA
@@ -166,7 +168,7 @@ def get_lineups(dataframe):
                     for player in line:
                         if player in away_subs and player not in away_starting_line:
                             index = possible_home_lines.index(line)
-                    possible_home_lines.pop(index)
+                            possible_away_lines.pop(index)
             away_ids_names = [(x, period_df[period_df['player1_id'] == x]['player1_name'].unique()[0]) for x in possible_away_lines[0]]
         else:
             away_ids_names = [(x, period_df[period_df['player1_id'] == x]['player1_name'].unique()[0]) for x in away_starting_line]
@@ -182,7 +184,7 @@ def get_lineups(dataframe):
                     for player in line:
                         if player in home_subs and player not in home_starting_line:
                             index = possible_home_lines.index(line)
-                    possible_home_lines.pop(index)
+                            possible_home_lines.pop(index)
             home_ids_names = [(x, period_df[period_df['player1_id'] == x]['player1_name'].unique()[0]) for x in possible_home_lines[0]]
         else:
             home_ids_names = [(x, period_df[period_df['player1_id'] == x]['player1_name'].unique()[0]) for x in home_starting_line]
