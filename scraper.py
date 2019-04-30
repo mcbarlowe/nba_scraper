@@ -39,7 +39,10 @@ shot_type_dict = {58: 'turnaround hook shot', 5: 'layup', 6: 'driving layup',
                   86: 'turnaround fadeaway', 78: 'floating jump shot', 9: 'driving dunk',
                   74: 'running reverse layup', 44: 'reverse layup', 71: 'finger roll layup',
                   43: 'alley oop layup', 7: 'dunk', 103: 'running pull up jump shot',
-                  110: 'running reverse dunk', 107: 'tip dunk', 51: 'reverse dunk'
+                  110: 'running reverse dunk', 107: 'tip dunk', 51: 'reverse dunk',
+                  105: 'turnaround fadeaway bank jump shot', 100: 'running alley oop layup',
+                  106: 'running alley oop dunk', 104: 'step back bank jump shot'
+                  109: 'driving reverse dunk'
                   }
 
 #this dictionary will categorize the event types that happen in the NBA
@@ -138,20 +141,37 @@ def get_lineups(dataframe):
 
 
 
-        away_starting_line = list(period_df[(period_df.event_team == test['away_team_abbrev'].unique()[0])
-                                       & (~pd.isnull(period_df['player1_name']))
-                                       & (period_df['player1_team_abbreviation'] == test['away_team_abbrev'].unique()[0])
-                                       & (period_df.is_block == 0)
-                                       & (period_df.is_steal == 0)]
-                                        .loc[:away_indexes[0], :]['player1_id'].unique())
-
-        home_starting_line = list(period_df[(period_df.event_team == test['home_team_abbrev'].unique()[0])
-                                       & (~pd.isnull(period_df['player1_name']))
-                                       & (period_df['player1_team_abbreviation'] == test['home_team_abbrev'].unique()[0])
-                                       & (period_df.is_block == 0)
-                                       & (period_df.is_steal == 0)]
-                                        .loc[:home_indexes[0], :]['player1_id'].unique())
-
+#pulls the unique values from the whole period dataframe
+        try:
+            away_starting_line = list(period_df[(period_df.event_team == period_df['away_team_abbrev'].unique()[0])
+                                           & (~pd.isnull(period_df['player1_name']))
+                                           & (period_df['player1_team_abbreviation'] == period_df['away_team_abbrev'].unique()[0])
+                                           & (period_df.is_block == 0)
+                                           & (period_df.is_steal == 0)]
+                                            .loc[:away_indexes[0], :]['player1_id'].unique())
+        except IndexError as ex:
+            print("No subs this period")
+            away_starting_line = list(period_df[(period_df.event_team == period_df['away_team_abbrev'].unique()[0])
+                                           & (~pd.isnull(period_df['player1_name']))
+                                           & (period_df['player1_team_abbreviation'] == period_df['away_team_abbrev'].unique()[0])
+                                           & (period_df.is_block == 0)
+                                           & (period_df.is_steal == 0)]
+                                      ['player1_id'].unique())
+        try:
+            home_starting_line = list(period_df[(period_df.event_team == period_df['home_team_abbrev'].unique()[0])
+                                           & (~pd.isnull(period_df['player1_name']))
+                                           & (period_df['player1_team_abbreviation'] == period_df['home_team_abbrev'].unique()[0])
+                                           & (period_df.is_block == 0)
+                                           & (period_df.is_steal == 0)]
+                                            .loc[:home_indexes[0], :]['player1_id'].unique())
+        except IndexError as ex:
+            print("No subs this period")
+            home_starting_line = list(period_df[(period_df.event_team == period_df['home_team_abbrev'].unique()[0])
+                                           & (~pd.isnull(period_df['player1_name']))
+                                           & (period_df['player1_team_abbreviation'] == period_df['home_team_abbrev'].unique()[0])
+                                           & (period_df.is_block == 0)
+                                           & (period_df.is_steal == 0)]
+                                     ['player1_id'].unique())
 #theres a large possibility that my catching of posssible lines might return
 #two possible lines that fit the criteria in extreme edge cases may have to
 #resort to brute forcing it if that happens often
