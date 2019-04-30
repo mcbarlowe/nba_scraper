@@ -150,7 +150,6 @@ def get_lineups(dataframe):
                                            & (period_df.is_steal == 0)]
                                             .loc[:away_indexes[0], :]['player1_id'].unique())
         except IndexError as ex:
-            print("No subs this period")
             away_starting_line = list(period_df[(period_df.event_team == period_df['away_team_abbrev'].unique()[0])
                                            & (~pd.isnull(period_df['player1_name']))
                                            & (period_df['player1_team_abbreviation'] == period_df['away_team_abbrev'].unique()[0])
@@ -165,7 +164,6 @@ def get_lineups(dataframe):
                                            & (period_df.is_steal == 0)]
                                             .loc[:home_indexes[0], :]['player1_id'].unique())
         except IndexError as ex:
-            print("No subs this period")
             home_starting_line = list(period_df[(period_df.event_team == period_df['home_team_abbrev'].unique()[0])
                                            & (~pd.isnull(period_df['player1_name']))
                                            & (period_df['player1_team_abbreviation'] == period_df['home_team_abbrev'].unique()[0])
