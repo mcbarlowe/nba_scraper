@@ -18,7 +18,7 @@ user_agent = {'User-agent': 'Mozilla/5.0'}
 #with 001. the next two digits are the year represented by the first year
 #in the sequence so for the 20172018 season it would be 17 and 20182019 it
 #would be 18 etc. 004 represents the playoffs
-schedule_api = f'http://data.nba.com/data/10s/v2015/json/mobile_teams/nba/{season}/league/00_full_schedule.json'
+#schedule_api = f'http://data.nba.com/data/10s/v2015/json/mobile_teams/nba/{season}/league/00_full_schedule.json'
 
 #this api goes back to 20152016 season maybe use this one
 #sched_api = 'http://data.nba.net/data/10s/prod/v1/{season}/schedule.json'
@@ -41,7 +41,7 @@ shot_type_dict = {58: 'turnaround hook shot', 5: 'layup', 6: 'driving layup',
                   43: 'alley oop layup', 7: 'dunk', 103: 'running pull up jump shot',
                   110: 'running reverse dunk', 107: 'tip dunk', 51: 'reverse dunk',
                   105: 'turnaround fadeaway bank jump shot', 100: 'running alley oop layup',
-                  106: 'running alley oop dunk', 104: 'step back bank jump shot'
+                  106: 'running alley oop dunk', 104: 'step back bank jump shot',
                   109: 'driving reverse dunk'
                   }
 
@@ -170,40 +170,58 @@ def get_lineups(dataframe):
                                            & (period_df.is_block == 0)
                                            & (period_df.is_steal == 0)]
                                      ['player1_id'].unique())
-#theres a large possibility that my catching of posssible lines might return
-#two possible lines that fit the criteria in extreme edge cases may have to
-#resort to brute forcing it if that happens often
+
+# if the lineups above aren't equal to five players then the code below loops
+# through the entire period dataframe if neccessary and pulls out the starting
+# players
+#TODO make the lineups up above into sets so I can reuse them and hopefully
+#TODO cut down on the looping needed in the steps below
 
         if len(away_starting_line) < 5:
-            possible_away_lines = []
-            possible_home_lines = []
-            for x in away_lineups:
-                if set(away_starting_line).issubset(x):
-                    possible_away_lines.append(x)
-            if len(possible_away_lines) > 1:
-                index = 0
-                for line in possible_away_lines:
-                    for player in line:
-                        if player in away_subs and player not in away_starting_line:
-                            index = possible_home_lines.index(line)
-                            possible_away_lines.pop(index)
-            away_ids_names = [(x, period_df[period_df['player1_id'] == x]['player1_name'].unique()[0]) for x in possible_away_lines[0]]
+            lineups = set()
+            subs = set()
+            for x in range(period_df.shape[0]):
+
+                if (period_df.iloc[x, :]['event_team'] == period_df['away_team_abbrev'].unique()[0] and
+                    pd.isnull(period_df.iloc[x, :]['player1_name']) != 1 and
+                    period_df.iloc[x, :]['player1_team_abbreviation'] == period_df.iloc[x, :]['away_team_abbrev'] and
+                    period_df.iloc[x, :]['is_block'] == 0 and period_df.iloc[x, :]['is_steal'] == 0):
+                    if period_df.iloc[x, :]['event_type_de'] != 'substitution':
+                        if period_df.iloc[x, :]['player1_id'] != 0 and period_df.iloc[x, :]['player1_id'] not in subs:
+                            lineups.add(period_df.iloc[x, :]['player1_id'])
+                    else:
+                        if period_df.iloc[x, :]['player2_id'] not in lineups:
+                            subs.add(period_df.iloc[x, :]['player2_id'])
+                        if period_df.iloc[x, :]['player1_id'] not in subs:
+                            lineups.add(period_df.iloc[x, :]['player1_id'])
+
+                    if len(lineups) == 5:
+                        break
+            away_ids_names = [(x, dataframe[dataframe['player1_id'] == x]['player1_name'].unique()[0]) for x in lineups]
         else:
-            away_ids_names = [(x, period_df[period_df['player1_id'] == x]['player1_name'].unique()[0]) for x in away_starting_line]
+            away_ids_names = [(x, dataframe[dataframe['player1_id'] == x]['player1_name'].unique()[0]) for x in away_starting_line]
         #repeating the process for home players
         if len(home_starting_line) < 5:
-            possible_home_lines = []
-            for x in home_lineups:
-                if set(home_starting_line).issubset(x):
-                    possible_home_lines.append(x)
-            if len(possible_home_lines) > 1:
-                index = 0
-                for line in possible_home_lines:
-                    for player in line:
-                        if player in home_subs and player not in home_starting_line:
-                            index = possible_home_lines.index(line)
-                            possible_home_lines.pop(index)
-            home_ids_names = [(x, period_df[period_df['player1_id'] == x]['player1_name'].unique()[0]) for x in possible_home_lines[0]]
+            lineups = set()
+            subs = set()
+            for x in range(period_df.shape[0]):
+                if (period_df.iloc[x, :]['event_team'] == period_df['home_team_abbrev'].unique()[0] and
+                    pd.isnull(period_df.iloc[x, :]['player1_name']) != 1 and
+                    period_df.iloc[x, :]['player1_team_abbreviation'] == period_df.iloc[x, :]['home_team_abbrev'] and
+                    period_df.iloc[x, :]['is_block'] == 0 and period_df.iloc[x, :]['is_steal'] == 0):
+                    if period_df.iloc[x, :]['event_type_de'] != 'substitution':
+                        if period_df.iloc[x, :]['player1_id'] != 0 and period_df.iloc[x, :]['player1_id'] not in subs:
+                            lineups.add(period_df.iloc[x, :]['player1_id'])
+                    else:
+                        if period_df.iloc[x, :]['player2_id'] not in lineups:
+                            subs.add(period_df.iloc[x, :]['player2_id'])
+                        if period_df.iloc[x, :]['player1_id'] not in subs:
+                            lineups.add(period_df.iloc[x, :]['player1_id'])
+
+                    if len(lineups) == 5:
+                        break
+
+            home_ids_names = [(x, period_df[period_df['player1_id'] == x]['player1_name'].unique()[0]) for x in lineups]
         else:
             home_ids_names = [(x, period_df[period_df['player1_id'] == x]['player1_name'].unique()[0]) for x in home_starting_line]
 
