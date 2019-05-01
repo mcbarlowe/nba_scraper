@@ -175,7 +175,8 @@ def get_lineups(dataframe):
 # through the entire period dataframe if neccessary and pulls out the starting
 # players
 #TODO make the lineups up above into sets so I can reuse them and hopefully
-#TODO cut down on the looping needed in the steps below
+#TODO cut down on the looping needed in the steps below. Also need to add checks
+#TODO the NBA lineup API if the result is still less than five players:
 
         if len(away_starting_line) < 5:
             lineups = set()
