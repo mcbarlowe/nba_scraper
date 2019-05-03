@@ -2,13 +2,13 @@ from distutils.core import setup
 setup(
   name = 'nba_scraper',
   packages = ['nba_scraper'],
-  version = '0.1',
+  version = '0.2',
   license='GNU General Public License v3.0',
   description = 'A Python package to scraper the NBA api and return a play by play file',
   author = 'Matthew Barlowe',
   author_email = 'matt@barloweanalytics.com',
   url = 'https://https://github.com/mcbarlowe/nba_scraper',
-  download_url = 'https://github.com/mcbarlowe/nba_scraper/archive/v_01.tar.gz',
+  download_url = 'https://github.com/mcbarlowe/nba_scraper/archive/v_02.tar.gz',
   keywords = ['basketball', 'NBA', 'scraper'],
   install_requires=[
           'requests',

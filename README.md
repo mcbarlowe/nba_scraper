@@ -28,7 +28,7 @@ The default data format is a pandas dataframe you can change this to csv
 with the `data_format` parameter. The default file path is the
 users home directory you can change this with the `data_dir` parameter
 
-    import nba_scraper as ns
+    import nba_scraper.nba_scraper as ns
 
     # if you want to return a dataframe
     # you can pass the function a list of strings or integers
@@ -47,7 +47,7 @@ The `data_format` and `data_dir` key words are used the excat same way as
 scraped to the function. This season is a four digit year that must be an
 integer.
 
-    import nba_scraper as ns
+    import nba_scraper.nba_scraper as ns
 
     #scrape a season
     nba_df = ns.scrape_season(2019)
