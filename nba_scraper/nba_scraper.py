@@ -1,6 +1,6 @@
 import os
 import pandas as pd
-import scrape_functions as sf
+import nba_scraper.scrape_functions as sf
 
 
 def scrape_game(game_ids, data_format='pandas', data_dir=f"{os.environ['HOME']}/nbadata.csv"):

@@ -1,1 +1,1 @@
-from nba_scraper import scrape_game, scrape_season
+import nba_scraper

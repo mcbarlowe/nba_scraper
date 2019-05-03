@@ -7,19 +7,19 @@ setup(
   description = 'A Python package to scraper the NBA api and return a play by play file',
   author = 'Matthew Barlowe',
   author_email = 'matt@barloweanalytics.com',
-  url = 'https://https://github.com/mcbarlowe/nba_scraper',   # Provide either the link to your github or to your website
-  download_url = 'https://github.com/user/reponame/archive/v_01.tar.gz',    # I explain this later on
-  keywords = ['basketball', 'NBA', 'scraper'],   # Keywords that define your package best
-  install_requires=[            # I get to this in a second
+  url = 'https://https://github.com/mcbarlowe/nba_scraper',
+  download_url = 'https://github.com/mcbarlowe/nba_scraper/archive/v_01.tar.gz',
+  keywords = ['basketball', 'NBA', 'scraper'],
+  install_requires=[
           'requests',
           'pandas',
           'numpy'
       ],
   classifiers=[
     'Development Status :: 3 - Alpha',
-    'Intended Audience :: Scientists/Analysts',
+    'Intended Audience :: Science/Research',
     'Topic :: Software Development :: Build Tools',
-    'License :: OSI Approved :: GNU General Public License v3.0',
+    'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
     'Programming Language :: Python :: 3',
     'Programming Language :: Python :: 3.4',
     'Programming Language :: Python :: 3.5',
