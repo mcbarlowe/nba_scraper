@@ -43,7 +43,7 @@ shot_type_dict = {58: 'turnaround hook shot', 5: 'layup', 6: 'driving layup',
                   110: 'running reverse dunk', 107: 'tip dunk', 51: 'reverse dunk',
                   105: 'turnaround fadeaway bank jump shot', 100: 'running alley oop layup',
                   106: 'running alley oop dunk', 104: 'step back bank jump shot',
-                  109: 'driving reverse dunk'
+                  109: 'driving reverse dunk', 2: '3pt shot'
                   }
 
 #this dictionary will categorize the event types that happen in the NBA
@@ -480,9 +480,12 @@ def scrape_pbp(game_id, user_agent=user_agent):
 # this will be the main url used for the v2 api url once testing is done
 # v2 api will contain all the player info for each play in the game while the
 # pbp_api_url will contain xy coords for each event
+    season = 2000 + int(game_id[3:5])
+#adding leading zeros onto gameid
+    game_id = f'{game_id}'
     v2_season = f'{season - 1}-{str(season)[2:]}'
 
-    pbp_season = f'{season - 1}'
+    pbp_season = f'{season}'
 
     v2_api_url = ('https://stats.nba.com/stats/playbyplayv2?EndPeriod=10'
                   f'&EndRange=55800&GameID={game_id}&RangeType=2&Season='
@@ -498,8 +501,8 @@ def scrape_pbp(game_id, user_agent=user_agent):
 #this pulls the v2 stats.nba play by play api
     pbp_v2_headers = v2_dict['resultSets'][0]['headers']
     pbp_v2_data = v2_dict['resultSets'][0]['rowSet']
-    pbp_v2_df.columns = list(map(str.lower, pbp_v2_df.columns))
     pbp_v2_df = pd.DataFrame(pbp_v2_data, columns=pbp_v2_headers)
+    pbp_v2_df.columns = list(map(str.lower, pbp_v2_df.columns))
 
 #this pulls the data.nba api end play by play
     pbp_rep = requests.get(pbp_api_url, headers=user_agent)
@@ -545,7 +548,7 @@ def scrape_pbp(game_id, user_agent=user_agent):
                                       clean_df['away_team_abbrev'])
 
 #create and event type description column
-    clean_df['event_type_de'] = clean_df[['etype']].replace({'etype': event_type_dict})
+    clean_df['event_type_de'] = clean_df[['eventmsgtype']].replace({'eventmsgtype': event_type_dict})
 
 #create and shot type description column
     clean_df['shot_type_de'] = clean_df[['eventmsgtype', 'eventmsgactiontype']]\
