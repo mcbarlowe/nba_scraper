@@ -12,8 +12,6 @@ won't have x/y locations for all events as the more recent seasons do.
 
 # Installation
 
-This package isn't on PyPi yet so ignore the instructions below for now.
-
 To install this package just type this at the command line:
 
     pip install nba_scraper
