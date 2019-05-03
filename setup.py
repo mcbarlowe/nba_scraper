@@ -4,13 +4,15 @@ with open("README.md", "r") as fh:
 setup(
   name = 'nba_scraper',
   packages = ['nba_scraper'],
-  version = '0.2.2',
+  version = '0.2.3',
   license='GNU General Public License v3.0',
   description = 'A Python package to scraper the NBA api and return a play by play file',
+  long_description=long_description,
+  long_description_content_type="text/markdown",
   author = 'Matthew Barlowe',
   author_email = 'matt@barloweanalytics.com',
   url = 'https://https://github.com/mcbarlowe/nba_scraper',
-  download_url = 'https://github.com/mcbarlowe/nba_scraper/archive/v_02.2.tar.gz',
+  download_url = 'https://github.com/mcbarlowe/nba_scraper/archive/v_02.3.tar.gz',
   keywords = ['basketball', 'NBA', 'scraper'],
   install_requires=[
           'requests',
