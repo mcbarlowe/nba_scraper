@@ -60,7 +60,8 @@ integer.
 
 If you have any troubles or bugs please **open an issue/bug report**. If you have
 any improvements/suggestions please **submit a pull request**. If it falls outside
-those two areas please feel free to email me at [matt@barloweanalytics.com](mailto: matt@barloweanalytics.com).
+those two areas please feel free to email me at
+[matt@barloweanalytics.com](mailto:matt@barloweanalytics.com).
 
 
 
