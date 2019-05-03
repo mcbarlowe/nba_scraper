@@ -1,7 +1,7 @@
 '''
 Date: 2019-01-02
 Contributor: Matthew Barlowe
-Twitter: @matt_barlowe
+Twitter: @barloweanalytic
 Email: matt@barloweanalytics.com
 
 This file contains the main functions to scrape and compile the NBA api and
@@ -25,6 +25,7 @@ user_agent = {'User-agent': 'Mozilla/5.0'}
 
 #this will catalog the shot types recorded in the NBA play by play
 #not sure how accurate this is it seems to change for the same shots
+#I think I have them all added but could be wrong.
 shot_type_dict = {58: 'turnaround hook shot', 5: 'layup', 6: 'driving layup',
                   96: 'turnaround bank hook shot', 108: 'cutting dunk shot',
                   79: 'pullup jump shot', 72: 'putback layup', 1: 'jump shot',
@@ -65,11 +66,6 @@ def get_lineups(dataframe):
     Outputs:
     lineup_df  - the dataframe with lineups computed
     '''
-    #this pulls out the starting lineups from the play by play if every player
-#on the court has done something that is recorded by the play by play
-#if not then I will need to check the players against the lineups returned
-#from the api and weed out which one doesn't fit. This needs to be repeated
-#for every period
 
     periods = []
     for period in range(1, dataframe['period'].max()+1):
@@ -134,14 +130,12 @@ def get_lineups(dataframe):
         #clean the id strings into a list of ids for each lineup and convert them to ints
         for x in range(len(away_lineups)):
             away_lineups[x] = list(map(int,list(filter(None,away_lineups[x][0].split('-')))))
-        #looking at the people before the first sub and if
-        #it doesn't equal five then continue till next sub excluding the id of the first
-        #subbed player and etc. until a list of five players is achieved if five is never
-        #achieved by end of period then goto lineup api
 
 
 
-#pulls the unique values from the whole period dataframe
+#pulls the unique values from the whole period dataframe if there are no subs
+#then it just pulls the unique ids from the from the dataframe itself because
+#the away/home indexes will be an empty list
         try:
             away_starting_line = list(period_df[(period_df.event_team == period_df['away_team_abbrev'].unique()[0])
                                            & (~pd.isnull(period_df['player1_name']))
@@ -171,25 +165,30 @@ def get_lineups(dataframe):
                                            & (period_df.is_steal == 0)]
                                      ['player1_id'].unique())
 
-# if the lineups above aren't equal to five players then the code below loops
-# through the entire period dataframe if neccessary and pulls out the starting
-# players
-#TODO make the lineups up above into sets so I can reuse them and hopefully
-#TODO cut down on the looping needed in the steps below. Also need to add checks
-#TODO the NBA lineup API if the result is still less than five players:
-
+# if the lineups aren't equal to five players then this code loops through the
+# dataframe for the period and seperates players into sets of whether they
+# started the period or were a sub by looking at each substitution and event
+# it will stop if it reaches 5. If at the end there still aren't five players
+# it then looks at the lineups returned from the lineup api and removes each
+# lineup that has a player that is in the subs set which will return only one
+# lineup and that lineup is set for the starting lineup
         if len(away_starting_line) < 5:
             lineups = set()
             subs = set()
             for x in range(period_df.shape[0]):
-
                 if (period_df.iloc[x, :]['event_team'] == period_df['away_team_abbrev'].unique()[0] and
                     pd.isnull(period_df.iloc[x, :]['player1_name']) != 1 and
                     period_df.iloc[x, :]['player1_team_abbreviation'] == period_df.iloc[x, :]['away_team_abbrev'] and
                     period_df.iloc[x, :]['is_block'] == 0 and period_df.iloc[x, :]['is_steal'] == 0):
+# if event is not substitution and player is not already in the subs
+# set it adds the player to the lineups set
                     if period_df.iloc[x, :]['event_type_de'] != 'substitution':
                         if period_df.iloc[x, :]['player1_id'] != 0 and period_df.iloc[x, :]['player1_id'] not in subs:
                             lineups.add(period_df.iloc[x, :]['player1_id'])
+# if event is a substitutoin then it adds the player coming out to lineups set
+# if it is not in the subs set and adds player going in to the subs set if they
+# are not already in the lineups set in case someone is subbed out and then
+# subbed back in.
                     else:
                         if period_df.iloc[x, :]['player2_id'] not in lineups:
                             subs.add(period_df.iloc[x, :]['player2_id'])
@@ -198,10 +197,21 @@ def get_lineups(dataframe):
 
                     if len(lineups) == 5:
                         break
-            away_ids_names = [(x, dataframe[dataframe['player1_id'] == x]['player1_name'].unique()[0]) for x in lineups]
+# check here to see if we have five players once loop is done if not then
+# the subs list is checked against the lineups api results and removes every
+# every lineup combination that has a sub in it which should only leave the
+# true starting lineup
+            if len(lineups) == 5:
+                away_ids_names = [(x, dataframe[dataframe['player1_id'] == x]['player1_name'].unique()[0]) for x in lineups]
+            else:
+                for player in subs:
+                    for lineup in list(away_lineups):
+                        if player in lineup:
+                            away_lineups.remove(lineup)
+                away_ids_names = [(x, dataframe[dataframe['player1_id'] == x]['player1_name'].unique()[0]) for x in away_lineups[0]]
         else:
             away_ids_names = [(x, dataframe[dataframe['player1_id'] == x]['player1_name'].unique()[0]) for x in away_starting_line]
-        #repeating the process for home players
+# repeating the process for home players
         if len(home_starting_line) < 5:
             lineups = set()
             subs = set()
@@ -222,12 +232,20 @@ def get_lineups(dataframe):
                     if len(lineups) == 5:
                         break
 
-            home_ids_names = [(x, period_df[period_df['player1_id'] == x]['player1_name'].unique()[0]) for x in lineups]
+            if len(lineups) == 5:
+                home_ids_names = [(x, dataframe[dataframe['player1_id'] == x]['player1_name'].unique()[0]) for x in lineups]
+            else:
+                for player in subs:
+                    for lineup in list(home_lineups):
+                        if player in lineup:
+                            home_lineups.remove(lineup)
+                home_ids_names = [(x, dataframe[dataframe['player1_id'] == x]['player1_name'].unique()[0]) for x in home_lineups[0]]
         else:
             home_ids_names = [(x, period_df[period_df['player1_id'] == x]['player1_name'].unique()[0]) for x in home_starting_line]
 
 
 
+# creating columns to populate with players on the court
         period_df['home_player_1'] = ''
         period_df['home_player_1_id'] = ''
         period_df['home_player_2'] = ''
@@ -248,6 +266,10 @@ def get_lineups(dataframe):
         period_df['away_player_4_id'] = ''
         period_df['away_player_5'] = ''
         period_df['away_player_5_id'] = ''
+# add players to the columns by looping through the dataframe and putting the
+# players in for each row using the starting lineup list. If there is a
+# substitution event then the player coming on replaces the player going off in
+# the list this is done for the whole period
         for x in range(period_df.shape[0]):
             if period_df.iloc[x, :]['event_type_de'] == 'substitution' and pd.isnull(period_df.iloc[x, :]['visitordescription']) == 1:
                 home_ids_names = [ids for ids in home_ids_names if ids[0] != period_df.iloc[x, :]['player1_id']]
@@ -318,6 +340,7 @@ def get_lineups(dataframe):
                 period_df.iloc[x, 80] = away_ids_names[4][1]
         periods.append(period_df)
 
+# concatting all the periods into one dataframe and returning it
     lineup_df = pd.concat(periods).reset_index()
     return lineup_df
 
@@ -453,15 +476,21 @@ def scrape_pbp(game_id, user_agent=user_agent):
     clean_df - final cleaned dataframe
     '''
 
-#hard coding these in for testing purposes
-    v2_api_url = 'https://stats.nba.com/stats/playbyplayv2?EndPeriod=10&EndRange=55800&GameID=0021800549&RangeType=2&Season=2018-19&SeasonType=Regular+Season&StartPeriod=1&StartRange=0'
-    pbp_api_url = 'https://data.nba.com/data/10s/v2015/json/mobile_teams/nba/2018/scores/pbp/0021800549_full_pbp.json'
 
 # this will be the main url used for the v2 api url once testing is done
-#v2 api will contain all the player info for each play in the game while the
-#pbp_api_url will contain xy coords for each event
-#   v2_api_url = 'https://stats.nba.com/stats/playbyplayv2?EndPeriod=10&EndRange=55800&GameID={game_id}&RangeType=2&Season=2018-19&SeasonType=Regular+Season&StartPeriod=1&StartRange=0kk'
-#   pbp_api_url = 'https://data.nba.com/data/10s/v2015/json/mobile_teams/nba/2018/scores/pbp/{game_id}_full_pbp.json'
+# v2 api will contain all the player info for each play in the game while the
+# pbp_api_url will contain xy coords for each event
+    v2_season = f'{season - 1}-{str(season)[2:]}'
+
+    pbp_season = f'{season - 1}'
+
+    v2_api_url = ('https://stats.nba.com/stats/playbyplayv2?EndPeriod=10'
+                  f'&EndRange=55800&GameID={game_id}&RangeType=2&Season='
+                  f'{v2_season}&SeasonType=Regular+Season&StartPeriod=1&StartRange=0kk')
+
+    pbp_api_url = (f'https://data.nba.com/data/10s/v2015/json/mobile_teams/'
+                  f'nba/{pbp_season}/scores/pbp/{game_id}_full_pbp.json')
+
 # have to pass this to the requests function or the api will return a 403 code
     v2_rep = requests.get(v2_api_url, headers=user_agent)
     v2_dict = v2_rep.json()
