@@ -1,3 +1,8 @@
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
+[![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](https://github.com/mcbarlowe/nba_scraper/commits/master)
+[![PyPI status](https://img.shields.io/pypi/status/ansicolortags.svg)](https://pypi.org/project/nba-scraper/)
+[![PyPI version shields.io](https://img.shields.io/pypi/v/ansicolortags.svg)](https://pypi.org/project/nba-scraper/)
+
 # `nba_scraper`
 
 This is a package written in Python to scraper the NBA's api and produced the
