@@ -495,10 +495,11 @@ def scrape_pbp(game_id, user_agent=user_agent):
                   f'nba/{pbp_season}/scores/pbp/{game_id}_full_pbp.json')
 
 # have to pass this to the requests function or the api will return a 403 code
-    print('pulling data from the api')
+    print('pulling data from the api1')
     v2_rep = requests.get(v2_api_url, headers=user_agent)
     v2_dict = v2_rep.json()
 
+    print('pulling data from api2')
 #this pulls the v2 stats.nba play by play api
     pbp_v2_headers = v2_dict['resultSets'][0]['headers']
     pbp_v2_data = v2_dict['resultSets'][0]['rowSet']
