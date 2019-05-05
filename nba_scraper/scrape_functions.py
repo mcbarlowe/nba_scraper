@@ -495,6 +495,7 @@ def scrape_pbp(game_id, user_agent=user_agent):
                   f'nba/{pbp_season}/scores/pbp/{game_id}_full_pbp.json')
 
 # have to pass this to the requests function or the api will return a 403 code
+    print('pulling data from the api')
     v2_rep = requests.get(v2_api_url, headers=user_agent)
     v2_dict = v2_rep.json()
 
@@ -514,6 +515,7 @@ def scrape_pbp(game_id, user_agent=user_agent):
     for qtr in range(len(pbp_dict['g']['pd'])):
         pbp_df_list.append(pd.DataFrame(pbp_dict['g']['pd'][qtr]['pla']))
 
+    print('calculating team abbreviations')
 #pulling the home and away team abbreviations and the game date
     gcode = pbp_dict['g']['gcode'].split('/')
     date = gcode[0]
@@ -522,10 +524,12 @@ def scrape_pbp(game_id, user_agent=user_agent):
     away_team_abbrev = teams[:3]
     pbp_df = pd.concat(pbp_df_list)
 
+    print('merging dataframes from the api')
 #joining the two dataframes together and only pulling in relavent columns
     clean_df = pbp_v2_df.merge(pbp_df[['evt', 'locX', 'locY', 'hs', 'vs', 'de']],
                                left_on = 'eventnum', right_on='evt')
 
+    print('creating abbreviation columns')
 #add date and team abbrev columns to dataframe
     clean_df.loc[:, 'home_team_abbrev'] = home_team_abbrev
     clean_df.loc[:, 'away_team_abbrev'] = away_team_abbrev
@@ -542,6 +546,7 @@ def scrape_pbp(game_id, user_agent=user_agent):
     clean_df.loc[:, 'home_team_id'] = home_team_id
     clean_df.loc[:, 'away_team_id'] = away_team_id
 
+    print('creating event team')
 #create an event team colum
     clean_df['event_team'] = np.where(clean_df['homedescription'].isnull(),
                                       clean_df['home_team_abbrev'],
@@ -559,6 +564,7 @@ def scrape_pbp(game_id, user_agent=user_agent):
                                       clean_df['home_team_abbrev'],
                                       clean_df['away_team_abbrev'])
 
+    print('calculating shot type columns')
 #create column whether shot was succesful or not
     clean_df['shot_made'] = clean_df.apply(made_shot, axis=1)
 
@@ -631,6 +637,7 @@ def scrape_pbp(game_id, user_agent=user_agent):
     clean_df['is_putback'] = np.where((clean_df['is_o_rebound'].shift(1) == 1) &
                                       (clean_df['event_length'] <= 3), 1, 0)
 
+    print('calculating lineups')
 #pull lineups
     clean_df = get_lineups(clean_df)
 
