@@ -7,3 +7,7 @@ install:
 
 script:
     - pytest -s test.py
+env:
+  - MOZ_HEADLESS=1
+addons:
+  firefox: latest
