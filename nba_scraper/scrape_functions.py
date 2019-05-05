@@ -530,7 +530,7 @@ def scrape_pbp(game_id, user_agent=user_agent):
     clean_df.loc[:, 'home_team_abbrev'] = home_team_abbrev
     clean_df.loc[:, 'away_team_abbrev'] = away_team_abbrev
     clean_df.loc[:, 'game_date'] = date
-    clean_df.loc[:, 'game_date'] = clean_df.loc[:, 'game_date'].astype('datetime64')
+    clean_df.loc[:, 'game_date'] = clean_df.loc[:, 'game_date'].astype('datetime64[ns]')
     clean_df.loc[:, ('season')] = np.where(clean_df.game_date.dt.month.isin([10, 11, 12]),
                                            clean_df.game_date.dt.year + 1,
                                            clean_df.game_date.dt.year)
