@@ -106,7 +106,7 @@ def get_lineups(dataframe):
                            'Season&ShotClockRange=&TeamID=&VsConference=&VsDivision=')
 
 
-        home_lineup_req = requests.get(home_lineup_api, headers=user_agent)
+        home_lineup_req = requests.get(home_lineup_api, headers=user_agent, verify=False)
 
         home_lineup_dict = home_lineup_req.json()
 
@@ -119,7 +119,7 @@ def get_lineups(dataframe):
         for x in range(len(home_lineups)):
             home_lineups[x] = list(map(int,list(filter(None,home_lineups[x][0].split('-')))))
 
-        away_lineup_req = requests.get(away_lineup_api, headers=user_agent)
+        away_lineup_req = requests.get(away_lineup_api, headers=user_agent, verify=False)
         away_lineup_dict = away_lineup_req.json()
 
         #extract the player ids of each lineup
@@ -496,7 +496,7 @@ def scrape_pbp(game_id, user_agent=user_agent):
 
 # have to pass this to the requests function or the api will return a 403 code
     print('pulling data from the api1')
-    v2_rep = requests.get(v2_api_url, headers=user_agent)
+    v2_rep = requests.get(v2_api_url, headers=user_agent, verify=False)
     v2_dict = v2_rep.json()
 
     print('pulling data from api2')
@@ -507,7 +507,7 @@ def scrape_pbp(game_id, user_agent=user_agent):
     pbp_v2_df.columns = list(map(str.lower, pbp_v2_df.columns))
 
 #this pulls the data.nba api end play by play
-    pbp_rep = requests.get(pbp_api_url, headers=user_agent)
+    pbp_rep = requests.get(pbp_api_url, headers=user_agent, verify=False)
     pbp_dict = pbp_rep.json()
 
 #this will be used to concat each quarter from the play by play
