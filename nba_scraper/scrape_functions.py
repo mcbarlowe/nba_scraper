@@ -67,6 +67,9 @@ def get_lineups(dataframe):
     lineup_df  - the dataframe with lineups computed
     '''
 
+    season_dict = {1: 'Pre+season', 2: 'Regular+Season',
+                   3: 'All+Star', 4: 'Playoffs'}
+    season_type = season_dict[int(dataframe['game_id'].unique()[0][2])]
     periods = []
     for period in range(1, dataframe['period'].max()+1):
         #subsets main dataframe by period and subsets into a home and away subs
@@ -94,17 +97,16 @@ def get_lineups(dataframe):
                            'GameSegment=&GroupQuantity=5&LastNGames=0&LeagueID=&Location=&'
                            f'MeasureType=Base&Month=0&OpponentTeamID={away_team_id}&Outcome=&PORound=&'
                            f'PaceAdjust=N&PerMode=Totals&Period={period}&PlusMinus=N&Rank=N&'
-                           f'Season={api_season}&SeasonSegment=&SeasonType=Regular+'
-                           'Season&ShotClockRange=&TeamID=&VsConference=&VsDivision=')
+                           f'Season={api_season}&SeasonSegment=&SeasonType={season_type}'
+                           '&ShotClockRange=&TeamID=&VsConference=&VsDivision=')
 
         away_lineup_api = ('https://stats.nba.com/stats/leaguedashlineups?Conference=&'
                            f'DateFrom={game_date}&DateTo={game_date}&Division=&'
                            'GameSegment=&GroupQuantity=5&LastNGames=0&LeagueID=&Location=&'
                            f'MeasureType=Base&Month=0&OpponentTeamID={home_team_id}&Outcome=&PORound=&'
                            f'PaceAdjust=N&PerMode=Totals&Period={period}&PlusMinus=N&Rank=N&'
-                           f'Season={api_season}&SeasonSegment=&SeasonType=Regular+'
-                           'Season&ShotClockRange=&TeamID=&VsConference=&VsDivision=')
-
+                           f'Season={api_season}&SeasonSegment=&SeasonType={season_type}'
+                           '&ShotClockRange=&TeamID=&VsConference=&VsDivision=')
 
         home_lineup_req = requests.get(home_lineup_api, headers=user_agent)
 
