@@ -171,7 +171,7 @@ def get_lineups(dataframe):
                            f'Season={api_season}&SeasonSegment=&SeasonType={season_type}'
                            '&ShotClockRange=&TeamID=&VsConference=&VsDivision=')
 
-        home_lineup_req = requests.get(home_lineup_api, headers=user_agent)
+        home_lineup_req = requests.get(home_lineup_api, headers=user_agent, verify=False)
 
         home_lineup_dict = home_lineup_req.json()
 
@@ -184,7 +184,7 @@ def get_lineups(dataframe):
         for x in range(len(home_lineups)):
             home_lineups[x] = list(map(int, list(filter(None, home_lineups[x][0].split('-')))))
 
-        away_lineup_req = requests.get(away_lineup_api, headers=user_agent)
+        away_lineup_req = requests.get(away_lineup_api, headers=user_agent, verify=False)
         away_lineup_dict = away_lineup_req.json()
 
         #extract the player ids of each lineup
