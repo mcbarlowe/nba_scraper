@@ -58,6 +58,21 @@ integer.
     # directory
     ns.scrape_season(2019, data_format='csv', data_dir='file/path')
 
+# `scrape_date_range`
+
+This allows you to scrape all **regular season** games in the date range passed to
+the function. As of right now it will not scrape playoff games. Date format must
+be passed in the format `YYYY-MM-DD`.
+
+    import nba_scraper.nba_scraper as ns
+
+    #scrape a season
+    nba_df = ns.scrape_date_range('2019-01-01', 2019-01-03')
+
+    # if you want a csv if you don't pass a file path the default is home
+    # directory
+    ns.scrape_date_range('2019-01-01', 2019-01-03', data_format='csv', data_dir='file/path')
+
 # Contact
 
 If you have any troubles or bugs please **open an issue/bug report**. If you have
