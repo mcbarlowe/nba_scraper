@@ -118,21 +118,19 @@ def get_date_games(from_date, to_date):
     return game_ids
 
 
-def get_lineups(dataframe):
+def get_lineups(dataframe, season_type):
     '''
     This function gets the lineups for the game and creates columns
     for each player on the court for each event of the play by play
 
     Inputs:
-    dataframe  - the nba dataframe that's been computed up to this point
+    dataframe     - the nba dataframe that's been computed up to this point
+    season_type   - type of game to be scraped: Regular Season, Playoffs, etc.
 
     Outputs:
-    lineup_df  - the dataframe with lineups computed
+    lineup_df     - the dataframe with lineups computed
     '''
 
-    season_dict = {1: 'Pre+season', 2: 'Regular+Season',
-                   3: 'All+Star', 4: 'Playoffs'}
-    season_type = season_dict[int(dataframe['game_id'].unique()[0][2])]
     periods = []
     for period in range(1, dataframe['period'].max() + 1):
         #subsets main dataframe by period and subsets into a home and away subs
@@ -561,35 +559,25 @@ def scrape_pbp(game_id, user_agent=user_agent):
     # this will be the main url used for the v2 api url once testing is done
     # v2 api will contain all the player info for each play in the game while the
     # pbp_api_url will contain xy coords for each event
-    season = 2000 + int(game_id[3:5])
-    #adding leading zeros onto gameid
-    game_id = f'{game_id}'
-    v2_season = f'{season - 1}-{str(season)[2:]}'
 
+    season_dict = {'1': 'Pre+season', '2': 'Regular+Season',
+                   '3': 'All+Star', '4': 'Playoffs'}
+    season_type = season_dict[game_id[2]]
+    season = 2000 + int(game_id[3:5])
+    v2_season = f'{season - 1}-{str(season)[2:]}'
     pbp_season = f'{season}'
 
-    v2_api_url = ('https://stats.nba.com/stats/playbyplayv2?EndPeriod=10'
-                  f'&EndRange=55800&GameID={game_id}&RangeType=2&Season='
-                  f'{v2_season}&SeasonType=Regular+Season&StartPeriod=1&StartRange=0kk')
+    v2_dict, pbp_dict = get_pbp_api(v2_season, pbp_season,
+                                    game_id, season_type)
 
-    pbp_api_url = (f'https://data.nba.com/data/10s/v2015/json/mobile_teams/'
-                   f'nba/{pbp_season}/scores/pbp/{game_id}_full_pbp.json')
-
-    # have to pass this to the requests function or the api will return a 403 code
-    v2_rep = requests.get(v2_api_url, headers=user_agent)
-    v2_dict = v2_rep.json()
-
-    #this pulls the v2 stats.nba play by play api
+    #converting stats.nba.com json into pandas dataframe
     pbp_v2_headers = v2_dict['resultSets'][0]['headers']
     pbp_v2_data = v2_dict['resultSets'][0]['rowSet']
     pbp_v2_df = pd.DataFrame(pbp_v2_data, columns=pbp_v2_headers)
     pbp_v2_df.columns = list(map(str.lower, pbp_v2_df.columns))
 
-    #this pulls the data.nba api end play by play
-    pbp_rep = requests.get(pbp_api_url, headers=user_agent)
-    pbp_dict = pbp_rep.json()
 
-    #this will be used to concat each quarter from the play by play
+    #converting data.nba.com json to dataframe
     pbp_df_list = []
 
     for qtr in range(len(pbp_dict['g']['pd'])):
@@ -713,6 +701,43 @@ def scrape_pbp(game_id, user_agent=user_agent):
                                       (clean_df['event_length'] <= 3), 1, 0)
 
     #pull lineups
-    clean_df = get_lineups(clean_df)
+    clean_df = get_lineups(clean_df, season_type)
 
     return clean_df
+
+def get_pbp_api(season_string, pbp_season, game_id, season_type):
+    '''
+    function gets both JSON requests from the two different APIs if both
+    are available and only the stats.nba.com api if not.
+
+    Inputs:
+    season_string    - String representing season for the stats.nba.com api
+    pbp_season       - String representing season for the data.nba.com api
+    game_id          - String representing game id
+    season_type      - type of game played: Regular Season, Playoffs etc.
+
+    Outputs:
+    pbp_dict         - Dictionary of the JSON response from data.nba.com api
+    v2_dict          - Dictionary of the JSON response from the stats.nba.com api
+    '''
+    v2_api_url = ('https://stats.nba.com/stats/playbyplayv2?EndPeriod=10'
+                  f'&EndRange=55800&GameID={game_id}&RangeType=2&Season='
+                  f'{season_string}&SeasonType={season_type}&StartPeriod='
+                  '1&StartRange=0kk')
+
+    pbp_api_url = (f'https://data.nba.com/data/10s/v2015/json/mobile_teams/'
+                   f'nba/{pbp_season}/scores/pbp/{game_id}_full_pbp.json')
+
+    #remove verify when merging to master
+    #pulls stats.nba.com response
+    v2_rep = requests.get(v2_api_url, headers=user_agent, verify=False)
+    v2_dict = v2_rep.json()
+
+    #this pulls the data.nba.com response
+    pbp_rep = requests.get(pbp_api_url, headers=user_agent, verify=False)
+    pbp_dict = pbp_rep.json()
+
+    return v2_dict, pbp_dict
+
+def get_lineup_api():
+    pass
