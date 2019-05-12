@@ -8,6 +8,8 @@ This file contains the main functions to scrape and compile the NBA api and
 return a CSV file of the pbp for the provided game
 '''
 import time
+import sys
+import json
 import requests
 import pandas as pd
 import numpy as np
@@ -241,10 +243,10 @@ def get_lineups(dataframe, season_type):
                         period_df.iloc[i, :]['is_steal'] == 0):
                     # if event is not substitution and player is not already in the subs
                     # set it adds the player to the lineups set
-                    if period_df.iloc[x, :]['event_type_de'] != 'substitution':
-                        if (period_df.iloc[x, :]['player1_id'] != 0 and
-                                period_df.iloc[x, :]['player1_id'] not in subs):
-                            lineups.add(period_df.iloc[x, :]['player1_id'])
+                    if period_df.iloc[i, :]['event_type_de'] != 'substitution':
+                        if (period_df.iloc[i, :]['player1_id'] != 0 and
+                                period_df.iloc[i, :]['player1_id'] not in subs):
+                            lineups.add(period_df.iloc[i, :]['player1_id'])
                             # if event is a substitutoin then it adds the
                             # player coming out to lineups set
                             # if it is not in the subs set and adds player
@@ -252,10 +254,10 @@ def get_lineups(dataframe, season_type):
                             # are not already in the lineups set in case
                             # someone is subbed out and then subbed back in.
                     else:
-                        if period_df.iloc[x, :]['player2_id'] not in lineups:
-                            subs.add(period_df.iloc[x, :]['player2_id'])
-                        if period_df.iloc[x, :]['player1_id'] not in subs:
-                            lineups.add(period_df.iloc[x, :]['player1_id'])
+                        if period_df.iloc[i, :]['player2_id'] not in lineups:
+                            subs.add(period_df.iloc[i, :]['player2_id'])
+                        if period_df.iloc[i, :]['player1_id'] not in subs:
+                            lineups.add(period_df.iloc[i, :]['player1_id'])
 
                     if len(lineups) == 5:
                         break
@@ -272,46 +274,55 @@ def get_lineups(dataframe, season_type):
                     for lineup in list(away_lineups):
                         if player in lineup:
                             away_lineups.remove(lineup)
-                away_ids_names = [(x, dataframe[dataframe['player1_id'] == x]['player1_name'].unique()[0]) for x in
-                                  away_lineups[0]]
+                away_ids_names = [
+                    (x, dataframe[dataframe['player1_id'] == x]
+                     ['player1_name'].unique()[0]) for x in away_lineups[0]]
         else:
-            away_ids_names = [(x, dataframe[dataframe['player1_id'] == x]['player1_name'].unique()[0]) for x in
-                              away_starting_line]
+            away_ids_names = [
+                (x, dataframe[dataframe['player1_id'] == x]
+                 ['player1_name'].unique()[0]) for x in away_starting_line]
         # repeating the process for home players
         if len(home_starting_line) < 5:
             lineups = set()
             subs = set()
-            for x in range(period_df.shape[0]):
-                if (period_df.iloc[x, :]['event_team'] == period_df['home_team_abbrev'].unique()[0] and
-                            pd.isnull(period_df.iloc[x, :]['player1_name']) != 1 and
-                            period_df.iloc[x, :]['player1_team_abbreviation'] == period_df.iloc[x, :][
-                            'home_team_abbrev'] and
-                            period_df.iloc[x, :]['is_block'] == 0 and period_df.iloc[x, :]['is_steal'] == 0):
-                    if period_df.iloc[x, :]['event_type_de'] != 'substitution':
-                        if period_df.iloc[x, :]['player1_id'] != 0 and period_df.iloc[x, :]['player1_id'] not in subs:
-                            lineups.add(period_df.iloc[x, :]['player1_id'])
+            for i in range(period_df.shape[0]):
+                if (
+                        period_df.iloc[i, :]['event_team'] ==
+                        period_df['home_team_abbrev'].unique()[0] and
+                        pd.isnull(period_df.iloc[i, :]['player1_name']) != 1 and
+                        period_df.iloc[i, :]['player1_team_abbreviation'] ==
+                        period_df.iloc[i, :]['home_team_abbrev'] and
+                        period_df.iloc[i, :]['is_block'] == 0 and
+                        period_df.iloc[i, :]['is_steal'] == 0):
+                    if period_df.iloc[i, :]['event_type_de'] != 'substitution':
+                        if (period_df.iloc[i, :]['player1_id'] != 0 and
+                                period_df.iloc[i, :]['player1_id'] not in subs):
+                            lineups.add(period_df.iloc[i, :]['player1_id'])
                     else:
-                        if period_df.iloc[x, :]['player2_id'] not in lineups:
-                            subs.add(period_df.iloc[x, :]['player2_id'])
-                        if period_df.iloc[x, :]['player1_id'] not in subs:
-                            lineups.add(period_df.iloc[x, :]['player1_id'])
+                        if period_df.iloc[i, :]['player2_id'] not in lineups:
+                            subs.add(period_df.iloc[i, :]['player2_id'])
+                        if period_df.iloc[i, :]['player1_id'] not in subs:
+                            lineups.add(period_df.iloc[i, :]['player1_id'])
 
                     if len(lineups) == 5:
                         break
 
             if len(lineups) == 5:
-                home_ids_names = [(x, dataframe[dataframe['player1_id'] == x]['player1_name'].unique()[0]) for x in
-                                  lineups]
+                home_ids_names = [
+                    (x, dataframe[dataframe['player1_id'] == x]
+                     ['player1_name'].unique()[0]) for x in lineups]
             else:
                 for player in subs:
                     for lineup in list(home_lineups):
                         if player in lineup:
                             home_lineups.remove(lineup)
-                home_ids_names = [(x, dataframe[dataframe['player1_id'] == x]['player1_name'].unique()[0]) for x in
-                                  home_lineups[0]]
+                home_ids_names = [
+                    (x, dataframe[dataframe['player1_id'] == x]
+                     ['player1_name'].unique()[0]) for x in home_lineups[0]]
         else:
-            home_ids_names = [(x, period_df[period_df['player1_id'] == x]['player1_name'].unique()[0]) for x in
-                              home_starting_line]
+            home_ids_names = [
+                (x, period_df[period_df['player1_id'] == x]
+                 ['player1_name'].unique()[0]) for x in home_starting_line]
 
         # creating columns to populate with players on the court
         period_df['home_player_1'] = ''
@@ -338,76 +349,78 @@ def get_lineups(dataframe, season_type):
         # players in for each row using the starting lineup list. If there is a
         # substitution event then the player coming on replaces the player going off in
         # the list this is done for the whole period
-        for x in range(period_df.shape[0]):
-            if period_df.iloc[x, :]['event_type_de'] == 'substitution' and pd.isnull(
-                period_df.iloc[x, :]['visitordescription']) == 1:
-                home_ids_names = [ids for ids in home_ids_names if ids[0] != period_df.iloc[x, :]['player1_id']]
-                home_ids_names.append((period_df.iloc[x, 21], period_df.iloc[x, 22]))
-                period_df.iloc[x, 63] = home_ids_names[0][0]
-                period_df.iloc[x, 62] = home_ids_names[0][1]
-                period_df.iloc[x, 65] = home_ids_names[1][0]
-                period_df.iloc[x, 64] = home_ids_names[1][1]
-                period_df.iloc[x, 67] = home_ids_names[2][0]
-                period_df.iloc[x, 66] = home_ids_names[2][1]
-                period_df.iloc[x, 69] = home_ids_names[3][0]
-                period_df.iloc[x, 68] = home_ids_names[3][1]
-                period_df.iloc[x, 71] = home_ids_names[4][0]
-                period_df.iloc[x, 70] = home_ids_names[4][1]
-                period_df.iloc[x, 73] = away_ids_names[0][0]
-                period_df.iloc[x, 72] = away_ids_names[0][1]
-                period_df.iloc[x, 75] = away_ids_names[1][0]
-                period_df.iloc[x, 74] = away_ids_names[1][1]
-                period_df.iloc[x, 77] = away_ids_names[2][0]
-                period_df.iloc[x, 76] = away_ids_names[2][1]
-                period_df.iloc[x, 79] = away_ids_names[3][0]
-                period_df.iloc[x, 78] = away_ids_names[3][1]
-                period_df.iloc[x, 81] = away_ids_names[4][0]
-                period_df.iloc[x, 80] = away_ids_names[4][1]
-            elif period_df.iloc[x, :]['event_type_de'] == 'substitution' and pd.isnull(
-                period_df.iloc[x, :]['homedescription']) == 1:
-                away_ids_names = [ids for ids in away_ids_names if ids[0] != period_df.iloc[x, :]['player1_id']]
-                away_ids_names.append((period_df.iloc[x, 21], period_df.iloc[x, 22]))
-                period_df.iloc[x, 63] = home_ids_names[0][0]
-                period_df.iloc[x, 62] = home_ids_names[0][1]
-                period_df.iloc[x, 65] = home_ids_names[1][0]
-                period_df.iloc[x, 64] = home_ids_names[1][1]
-                period_df.iloc[x, 67] = home_ids_names[2][0]
-                period_df.iloc[x, 66] = home_ids_names[2][1]
-                period_df.iloc[x, 69] = home_ids_names[3][0]
-                period_df.iloc[x, 68] = home_ids_names[3][1]
-                period_df.iloc[x, 71] = home_ids_names[4][0]
-                period_df.iloc[x, 70] = home_ids_names[4][1]
-                period_df.iloc[x, 73] = away_ids_names[0][0]
-                period_df.iloc[x, 72] = away_ids_names[0][1]
-                period_df.iloc[x, 75] = away_ids_names[1][0]
-                period_df.iloc[x, 74] = away_ids_names[1][1]
-                period_df.iloc[x, 77] = away_ids_names[2][0]
-                period_df.iloc[x, 76] = away_ids_names[2][1]
-                period_df.iloc[x, 79] = away_ids_names[3][0]
-                period_df.iloc[x, 78] = away_ids_names[3][1]
-                period_df.iloc[x, 81] = away_ids_names[4][0]
-                period_df.iloc[x, 80] = away_ids_names[4][1]
+        for i in range(period_df.shape[0]):
+            if (period_df.iloc[i, :]['event_type_de'] == 'substitution' and
+                    pd.isnull(period_df.iloc[i, :]['visitordescription']) == 1):
+                home_ids_names = [ids for ids in home_ids_names if
+                                  ids[0] != period_df.iloc[i, :]['player1_id']]
+                home_ids_names.append((period_df.iloc[i, 21], period_df.iloc[i, 22]))
+                period_df.iloc[i, 63] = home_ids_names[0][0]
+                period_df.iloc[i, 62] = home_ids_names[0][1]
+                period_df.iloc[i, 65] = home_ids_names[1][0]
+                period_df.iloc[i, 64] = home_ids_names[1][1]
+                period_df.iloc[i, 67] = home_ids_names[2][0]
+                period_df.iloc[i, 66] = home_ids_names[2][1]
+                period_df.iloc[i, 69] = home_ids_names[3][0]
+                period_df.iloc[i, 68] = home_ids_names[3][1]
+                period_df.iloc[i, 71] = home_ids_names[4][0]
+                period_df.iloc[i, 70] = home_ids_names[4][1]
+                period_df.iloc[i, 73] = away_ids_names[0][0]
+                period_df.iloc[i, 72] = away_ids_names[0][1]
+                period_df.iloc[i, 75] = away_ids_names[1][0]
+                period_df.iloc[i, 74] = away_ids_names[1][1]
+                period_df.iloc[i, 77] = away_ids_names[2][0]
+                period_df.iloc[i, 76] = away_ids_names[2][1]
+                period_df.iloc[i, 79] = away_ids_names[3][0]
+                period_df.iloc[i, 78] = away_ids_names[3][1]
+                period_df.iloc[i, 81] = away_ids_names[4][0]
+                period_df.iloc[i, 80] = away_ids_names[4][1]
+            elif (period_df.iloc[i, :]['event_type_de'] == 'substitution' and
+                  pd.isnull(period_df.iloc[i, :]['homedescription']) == 1):
+                away_ids_names = [ids for ids in away_ids_names if
+                                  ids[0] != period_df.iloc[i, :]['player1_id']]
+                away_ids_names.append((period_df.iloc[i, 21], period_df.iloc[i, 22]))
+                period_df.iloc[i, 63] = home_ids_names[0][0]
+                period_df.iloc[i, 62] = home_ids_names[0][1]
+                period_df.iloc[i, 65] = home_ids_names[1][0]
+                period_df.iloc[i, 64] = home_ids_names[1][1]
+                period_df.iloc[i, 67] = home_ids_names[2][0]
+                period_df.iloc[i, 66] = home_ids_names[2][1]
+                period_df.iloc[i, 69] = home_ids_names[3][0]
+                period_df.iloc[i, 68] = home_ids_names[3][1]
+                period_df.iloc[i, 71] = home_ids_names[4][0]
+                period_df.iloc[i, 70] = home_ids_names[4][1]
+                period_df.iloc[i, 73] = away_ids_names[0][0]
+                period_df.iloc[i, 72] = away_ids_names[0][1]
+                period_df.iloc[i, 75] = away_ids_names[1][0]
+                period_df.iloc[i, 74] = away_ids_names[1][1]
+                period_df.iloc[i, 77] = away_ids_names[2][0]
+                period_df.iloc[i, 76] = away_ids_names[2][1]
+                period_df.iloc[i, 79] = away_ids_names[3][0]
+                period_df.iloc[i, 78] = away_ids_names[3][1]
+                period_df.iloc[i, 81] = away_ids_names[4][0]
+                period_df.iloc[i, 80] = away_ids_names[4][1]
             else:
-                period_df.iloc[x, 63] = home_ids_names[0][0]
-                period_df.iloc[x, 62] = home_ids_names[0][1]
-                period_df.iloc[x, 65] = home_ids_names[1][0]
-                period_df.iloc[x, 64] = home_ids_names[1][1]
-                period_df.iloc[x, 67] = home_ids_names[2][0]
-                period_df.iloc[x, 66] = home_ids_names[2][1]
-                period_df.iloc[x, 69] = home_ids_names[3][0]
-                period_df.iloc[x, 68] = home_ids_names[3][1]
-                period_df.iloc[x, 71] = home_ids_names[4][0]
-                period_df.iloc[x, 70] = home_ids_names[4][1]
-                period_df.iloc[x, 73] = away_ids_names[0][0]
-                period_df.iloc[x, 72] = away_ids_names[0][1]
-                period_df.iloc[x, 75] = away_ids_names[1][0]
-                period_df.iloc[x, 74] = away_ids_names[1][1]
-                period_df.iloc[x, 77] = away_ids_names[2][0]
-                period_df.iloc[x, 76] = away_ids_names[2][1]
-                period_df.iloc[x, 79] = away_ids_names[3][0]
-                period_df.iloc[x, 78] = away_ids_names[3][1]
-                period_df.iloc[x, 81] = away_ids_names[4][0]
-                period_df.iloc[x, 80] = away_ids_names[4][1]
+                period_df.iloc[i, 63] = home_ids_names[0][0]
+                period_df.iloc[i, 62] = home_ids_names[0][1]
+                period_df.iloc[i, 65] = home_ids_names[1][0]
+                period_df.iloc[i, 64] = home_ids_names[1][1]
+                period_df.iloc[i, 67] = home_ids_names[2][0]
+                period_df.iloc[i, 66] = home_ids_names[2][1]
+                period_df.iloc[i, 69] = home_ids_names[3][0]
+                period_df.iloc[i, 68] = home_ids_names[3][1]
+                period_df.iloc[i, 71] = home_ids_names[4][0]
+                period_df.iloc[i, 70] = home_ids_names[4][1]
+                period_df.iloc[i, 73] = away_ids_names[0][0]
+                period_df.iloc[i, 72] = away_ids_names[0][1]
+                period_df.iloc[i, 75] = away_ids_names[1][0]
+                period_df.iloc[i, 74] = away_ids_names[1][1]
+                period_df.iloc[i, 77] = away_ids_names[2][0]
+                period_df.iloc[i, 76] = away_ids_names[2][1]
+                period_df.iloc[i, 79] = away_ids_names[3][0]
+                period_df.iloc[i, 78] = away_ids_names[3][1]
+                period_df.iloc[i, 81] = away_ids_names[4][0]
+                period_df.iloc[i, 80] = away_ids_names[4][1]
         periods.append(period_df)
 
     # concatting all the periods into one dataframe and returning it
@@ -465,8 +478,7 @@ def parse_foul(row):
         return 'flagrant'
     if 'Flagrant 2' in row['de']:
         return 'flagrant 2'
-    else:
-        return np.nan
+    return np.nan
 
 
 def parse_shot_types(row):
@@ -506,16 +518,18 @@ def create_seconds_elapsed(row):
     time_in_seconds - the elapsed game time expressed in seconds
     '''
 
-    time = row['pctimestring'].strip()
-    time_list = time.split(':')
+    time_list = row['pctimestring'].strip().split(':')
     max_time = 720
     ot_max_time = 300
 
     if row['period'] in [1, 2, 3, 4]:
-        time_in_seconds = (max_time - (int(time_list[0]) * 60 + int(time_list[1]))) + (720 * (int(row['period']) - 1))
+        time_in_seconds = (
+            max_time - (int(time_list[0]) * 60 + int(time_list[1]))) +\
+            (720 * (int(row['period']) - 1))
     elif row['period'] > 4:
-        time_in_seconds = (ot_max_time - (int(time_list[0]) * 60 + int(time_list[1]))) + (
-        300 * (int(row['period']) - 5)) + 2880
+        time_in_seconds = (
+            ot_max_time - (int(time_list[0]) * 60 + int(time_list[1]))) + \
+            (300 * (int(row['period']) - 5)) + 2880
 
     return time_in_seconds
 
@@ -539,41 +553,50 @@ def calc_points_made(row):
     else:
         return 0
 
+def main_scrape(game_id):
+    '''
+    this is the main function that runs and ties all them together. Doing it
+    this way so I can better write tests that work on Travis CI due to their
+    IP being blacklisted by NBA.com.
 
-#TODO 2019-05-12 work on this stuff
-#TODO refactor this to take the JSON from the api calls and return a dataframe
-#TODO that will then be fed into the lineups function. Create another function
-#TODO that wraps them all together that the nba_scraper module will call
-def scrape_pbp(game_id, user_agent=USER_AGENT):
+    Inputs:
+    game_id     - NBA game id of game to be scraped
+
+    Outputs:
+    game_df     - pandas dataframe of the play by play
+    '''
+    season_dict = {'1': 'Pre+season', '2': 'Regular+Season',
+                   '3': 'All+Star', '4': 'Playoffs'}
+    season_type = season_dict[game_id[2]]
+    season = 2000 + int(game_id[3:5])
+    v2_dict, pbp_dict = get_pbp_api(f'{season - 1}-{str(season)[2:]}',
+                                    str(season), game_id, season_type)
+    game_df = scrape_pbp(v2_dict, pbp_dict)
+    #TODO 2019-5-12 Start here with this
+    #TODO pull the loop outside of the get_lineups function and do it here
+    #TODO have the get_lineups only do a period at a time and then concat
+    #TODO what it returns out here
+    game_df = get_lineups(game_df, season_type)
+
+    return game_df
+
+def scrape_pbp(v2_dict, pbp_dict):
     '''
     This function scrapes both of the pbp urls and returns a joined/cleaned
     pbp dataframe
 
     Inputs:
-    game_id - integer id of the nba game you want to scrape in question
-    user_agent - this is the user agent to pass to the requests function
+    v2_dict     - stats.nba.com api response
+    pbp_dict    - data.nba.com api response
 
     Outputs:
     clean_df - final cleaned dataframe
     '''
 
-    # this will be the main url used for the v2 api url once testing is done
-    # v2 api will contain all the player info for each play in the game while the
-    # pbp_api_url will contain xy coords for each event
-
-    season_dict = {'1': 'Pre+season', '2': 'Regular+Season',
-                   '3': 'All+Star', '4': 'Playoffs'}
-    season_type = season_dict[game_id[2]]
-    season = 2000 + int(game_id[3:5])
-
-    v2_dict, pbp_dict = get_pbp_api(f'{season - 1}-{str(season)[2:]}',
-                                    str(season), game_id, season_type)
-
     #converting stats.nba.com json into pandas dataframe
     pbp_v2_df = pd.DataFrame(v2_dict['resultSets'][0]['rowSet'],
                              columns=v2_dict['resultSets'][0]['headers'])
     pbp_v2_df.columns = list(map(str.lower, pbp_v2_df.columns))
-
 
     #converting data.nba.com json to dataframe
     pbp_df_list = []
@@ -616,12 +639,13 @@ def scrape_pbp(game_id, user_agent=USER_AGENT):
                                       clean_df['away_team_abbrev'])
 
     #create and event type description column
-    clean_df['event_type_de'] = clean_df[['eventmsgtype']].replace({'eventmsgtype': EVENT_TYPE_DICT})
+    clean_df['event_type_de'] = \
+        clean_df[['eventmsgtype']].replace({'eventmsgtype': EVENT_TYPE_DICT})
 
     #create and shot type description column
     clean_df['shot_type_de'] = clean_df[['eventmsgtype', 'eventmsgactiontype']] \
         .apply(lambda x: SHOT_TYPE_DICT[int(x['eventmsgactiontype'])]
-    if np.isin(x['eventmsgtype'], [1, 2]) else np.nan, axis=1)
+               if np.isin(x['eventmsgtype'], [1, 2]) else np.nan, axis=1)
     #create an event team colum
     clean_df['event_team'] = np.where(clean_df['homedescription'].isnull(),
                                       clean_df['home_team_abbrev'],
@@ -651,11 +675,14 @@ def scrape_pbp(game_id, user_agent=USER_AGENT):
 
     #create columns that determine if rebound is offenseive or deffensive
     clean_df['is_d_rebound'] = np.where((clean_df['event_type_de'] == 'rebound') &
-                                        (clean_df['event_team'] != clean_df['event_team'].shift(1)), 1, 0)
+                                        (clean_df['event_team'] !=
+                                         clean_df['event_team'].shift(1)), 1, 0)
 
     clean_df['is_o_rebound'] = np.where((clean_df['event_type_de'] == 'rebound') &
-                                        (clean_df['event_team'] == clean_df['event_team'].shift(1))
-                                        & (clean_df['event_type_de'].shift(1) != 'free-throw'), 1, 0)
+                                        (clean_df['event_team'] ==
+                                         clean_df['event_team'].shift(1))
+                                        & (clean_df['event_type_de'].shift(1) !=
+                                           'free-throw'), 1, 0)
 
     #create columns to determine turnovers and steals
     clean_df['is_turnover'] = np.where(clean_df['de'].str.contains('Turnover'), 1, 0)
@@ -673,11 +700,13 @@ def scrape_pbp(game_id, user_agent=USER_AGENT):
 
     #create columns that determine if rebound is offenseive or deffensive
     clean_df['is_d_rebound'] = np.where((clean_df['event_type_de'] == 'rebound') &
-                                        (clean_df['event_team'] != clean_df['event_team'].shift(1)), 1, 0)
+                                        (clean_df['event_team'] !=
+                                         clean_df['event_team'].shift(1)), 1, 0)
 
     clean_df['is_o_rebound'] = np.where((clean_df['event_type_de'] == 'rebound') &
                                         (clean_df['event_team'] == clean_df['event_team'].shift(1))
-                                        & (clean_df['event_type_de'].shift(1) != 'free-throw'), 1, 0)
+                                        & (clean_df['event_type_de'].shift(1) !=
+                                           'free-throw'), 1, 0)
 
     #create columns to determine turnovers and steals
     clean_df['is_turnover'] = np.where(clean_df['de'].str.contains('Turnover'), 1, 0)
@@ -691,7 +720,6 @@ def scrape_pbp(game_id, user_agent=USER_AGENT):
                                       (clean_df['event_length'] <= 3), 1, 0)
 
     #pull lineups
-    clean_df = get_lineups(clean_df, season_type)
 
     return clean_df
 
@@ -718,12 +746,23 @@ def get_pbp_api(season_string, pbp_season, game_id, season_type):
     pbp_api_url = (f'https://data.nba.com/data/10s/v2015/json/mobile_teams/'
                    f'nba/{pbp_season}/scores/pbp/{game_id}_full_pbp.json')
 
+    # this will be the main url used for the v2 api url once testing is done
+    # v2 api will contain all the player info for each play in the game while the
+    # pbp_api_url will contain xy coords for each event
+
     #TODO remove verify when merging to master
-    #TODO add try except blocks for when the JSON isn't valid which is a
-    #TODO JSONDecodeError and then print the string results of what the API
-    #TODO endpoint returns
-    v2_rep = requests.get(v2_api_url, headers=USER_AGENT, verify=False)
-    pbp_rep = requests.get(pbp_api_url, headers=USER_AGENT, verify=False)
+    try:
+        v2_rep = requests.get(v2_api_url, headers=USER_AGENT, verify=False)
+    except json.decoder.JSONDecodeError as ex:
+        print(ex)
+        print(f'This is the stats.nba.com API\'s output: {v2_rep.text}')
+        sys.exit()
+    try:
+        pbp_rep = requests.get(pbp_api_url, headers=USER_AGENT, verify=False)
+    except json.decoder.JSONDecodeError as ex:
+        print(ex)
+        print(f'This is the data.nba.com API\'s output: {pbp_rep.text}')
+        sys.exit()
 
     v2_dict = v2_rep.json()
     pbp_dict = pbp_rep.json()
@@ -770,13 +809,20 @@ def get_lineup_api(season_string, away_team_id, home_team_id,
                        '&ShotClockRange=&TeamID=&VsConference=&VsDivision=')
 
     #TODO change the verify from false in final release
-    #TODO add try except blocks for when the JSON isn't valid which is a
-    #TODO JSONDecodeError and then print the string results of what the API
-    #TODO endpoint returns
-    home_lineup_req = requests.get(home_lineup_api,
-                                   headers=USER_AGENT, verify=False)
-    away_lineup_req = requests.get(away_lineup_api,
-                                   headers=USER_AGENT, verify=False)
+    try:
+        home_lineup_req = requests.get(home_lineup_api,
+                                       headers=USER_AGENT, verify=False)
+    except json.decoder.JSONDecodeError as ex:
+        print(ex)
+        print(f'This is the home_lineup API\'s output: {home_lineup_req.text}')
+        sys.exit()
+    try:
+        away_lineup_req = requests.get(away_lineup_api,
+                                       headers=USER_AGENT, verify=False)
+    except json.decoder.JSONDecodeError as ex:
+        print(ex)
+        print(f'This is the away_lineup API\'s output: {away_lineup_req.text}')
+        sys.exit()
 
     home_dict = home_lineup_req.json()
     away_dict = away_lineup_req.json()
