@@ -151,49 +151,29 @@ def get_lineups(dataframe, season_type):
         #each team
         away_indexes = list(away_subs.index)
         home_indexes = list(home_subs.index)
-        #create variables for the lineup API in case just looking at
-        game_date = str(period_df.game_date.unique()[0])[:10]
-        away_team_id = period_df.away_team_id.unique()[0]
-        home_team_id = period_df.home_team_id.unique()[0]
-        api_season = f'{period_df.season.unique()[0]-1}-{str(period_df.season.unique()[0])[2:]}'
-        home_lineup_api = ('https://stats.nba.com/stats/leaguedashlineups?Conference=&'
-                           f'DateFrom={game_date}&DateTo={game_date}&Division=&'
-                           'GameSegment=&GroupQuantity=5&LastNGames=0&LeagueID=&Location=&'
-                           f'MeasureType=Base&Month=0&OpponentTeamID={away_team_id}&Outcome=&PORound=&'
-                           f'PaceAdjust=N&PerMode=Totals&Period={period}&PlusMinus=N&Rank=N&'
-                           f'Season={api_season}&SeasonSegment=&SeasonType={season_type}'
-                           '&ShotClockRange=&TeamID=&VsConference=&VsDivision=')
 
-        away_lineup_api = ('https://stats.nba.com/stats/leaguedashlineups?Conference=&'
-                           f'DateFrom={game_date}&DateTo={game_date}&Division=&'
-                           'GameSegment=&GroupQuantity=5&LastNGames=0&LeagueID=&Location=&'
-                           f'MeasureType=Base&Month=0&OpponentTeamID={home_team_id}&Outcome=&PORound=&'
-                           f'PaceAdjust=N&PerMode=Totals&Period={period}&PlusMinus=N&Rank=N&'
-                           f'Season={api_season}&SeasonSegment=&SeasonType={season_type}'
-                           '&ShotClockRange=&TeamID=&VsConference=&VsDivision=')
-        print(home_lineup_api)
-        home_lineup_req = requests.get(home_lineup_api, headers=user_agent, verify=False)
-
-        home_lineup_dict = home_lineup_req.json()
+        home_lineup_dict, away_lineup_dict = \
+                get_lineup_api((f'{period_df.season.unique()[0]-1}'
+                                f'-{str(period_df.season.unique()[0])[2:]}'),
+                               period_df.away_team_id.unique()[0],
+                               period_df.home_team_id.unique()[0],
+                               season_type, period,
+                               str(period_df.game_date.unique()[0])[:10])
 
         #extract the player ids of each lineup
         home_lineups = []
+        away_lineups = []
+
         for lineup in home_lineup_dict['resultSets'][0]['rowSet']:
             home_lineups.append([lineup[1]])
+
+        for lineup in away_lineup_dict['resultSets'][0]['rowSet']:
+            away_lineups.append([lineup[1]])
 
         #clean the id strings into a list of ids for each lineup and convert them to ints
         for x in range(len(home_lineups)):
             home_lineups[x] = list(map(int, list(filter(None, home_lineups[x][0].split('-')))))
 
-        away_lineup_req = requests.get(away_lineup_api, headers=user_agent, verify=False)
-        away_lineup_dict = away_lineup_req.json()
-
-        #extract the player ids of each lineup
-        away_lineups = []
-        for lineup in away_lineup_dict['resultSets'][0]['rowSet']:
-            away_lineups.append([lineup[1]])
-
-        #clean the id strings into a list of ids for each lineup and convert them to ints
         for x in range(len(away_lineups)):
             away_lineups[x] = list(map(int, list(filter(None, away_lineups[x][0].split('-')))))
 
