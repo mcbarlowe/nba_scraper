@@ -14,4 +14,11 @@ def test_pbp_request():
     assert isinstance(pbp_dict, dict)
 
 def test_lineup_request():
-    home_dict, away_dict = ns.get_lineup_api()
+    '''
+    test checks to make sure lineup API is returning a proper JSON string
+    that can be converted into a python dictionary
+    '''
+    home_dict, away_dict = ns.get_lineup_api('2017-18', 1610612750, 1610612739,
+                                             'Regular+Season', 1, '2017-10-17')
+    assert isinstance(home_dict, dict)
+    assert isinstance(away_dict, dict)

@@ -7,10 +7,10 @@ Email: matt@barloweanalytics.com
 This file contains the main functions to scrape and compile the NBA api and
 return a CSV file of the pbp for the provided game
 '''
+import time
 import requests
 import pandas as pd
 import numpy as np
-import time
 
 # have to pass this to the requests function or the api will return a 403 code
 user_agent = {'User-agent': 'Mozilla/5.0'}
@@ -19,7 +19,8 @@ user_agent = {'User-agent': 'Mozilla/5.0'}
 #with 001. the next two digits are the year represented by the first year
 #in the sequence so for the 20172018 season it would be 17 and 20182019 it
 #would be 18 etc. 004 represents the playoffs
-#schedule_api = f'http://data.nba.com/data/10s/v2015/json/mobile_teams/nba/{season}/league/00_full_schedule.json'
+#schedule_api = ('http://data.nba.com/data/10s/v2015/json/'
+#                f'mobile_teams/nba/{season}/league/00_full_schedule.json')
 
 #this api goes back to 20152016 season maybe use this one
 #sched_api = 'http://data.nba.net/data/10s/prod/v1/{season}/schedule.json'
@@ -97,7 +98,8 @@ def get_date_games(from_date, to_date):
 
     # Must check each season in between date range
     for season in range(get_season(from_date), get_season(to_date) + 1):
-        url = f"http://data.nba.com/data/10s/v2015/json/mobile_teams/nba/{season}/league/00_full_schedule.json"
+        url = ("http://data.nba.com/data/10s/v2015/json/mobile_teams"
+               f"/nba/{season}/league/00_full_schedule.json")
         schedule = requests.get(url, headers=user_agent).json()
         time.sleep(1)
 
@@ -108,7 +110,8 @@ def get_date_games(from_date, to_date):
             else:
                 continue
 
-            # If first game in month doesn't fall in range no need to check each game for rest of month
+            # If first game in month doesn't fall in range no need to
+            # check each game for rest of month
             if to_date >= cur_month >= from_date:
                 for game in month['mscd']['g']:
                     # Check if individual game in date range
@@ -168,7 +171,7 @@ def get_lineups(dataframe, season_type):
                            f'PaceAdjust=N&PerMode=Totals&Period={period}&PlusMinus=N&Rank=N&'
                            f'Season={api_season}&SeasonSegment=&SeasonType={season_type}'
                            '&ShotClockRange=&TeamID=&VsConference=&VsDivision=')
-
+        print(home_lineup_api)
         home_lineup_req = requests.get(home_lineup_api, headers=user_agent, verify=False)
 
         home_lineup_dict = home_lineup_req.json()
@@ -585,6 +588,8 @@ def scrape_pbp(game_id, user_agent=user_agent):
 
     #pulling the home and away team abbreviations and the game date
     gcode = pbp_dict['g']['gcode'].split('/')
+    #TODO find some way of getting date from stats.nba.com instead of
+    #TODO data.nba.com so that way can extend to past seasons
     date = gcode[0]
     teams = gcode[1]
     home_team_abbrev = teams[3:]
@@ -605,8 +610,10 @@ def scrape_pbp(game_id, user_agent=user_agent):
                                            clean_df.game_date.dt.year)
 
     #code to properly get the team ids as the scientific notation cuts off some digits
-    home_team_id = clean_df[clean_df['player1_team_abbreviation'] == home_team_abbrev]['player1_team_id'].astype(
-        int).unique()
+    home_team_id = clean_df[
+        clean_df['player1_team_abbreviation'] ==
+        home_team_abbrev]['player1_team_id'].astype(int).unique()
+
     away_team_id = clean_df[clean_df['player1_team_abbreviation'] == away_team_abbrev]['player1_team_id'].astype(
         int).unique()
     clean_df.loc[:, 'home_team_id'] = home_team_id
@@ -728,16 +735,67 @@ def get_pbp_api(season_string, pbp_season, game_id, season_type):
     pbp_api_url = (f'https://data.nba.com/data/10s/v2015/json/mobile_teams/'
                    f'nba/{pbp_season}/scores/pbp/{game_id}_full_pbp.json')
 
-    #remove verify when merging to master
-    #pulls stats.nba.com response
+    #TODO remove verify when merging to master
+    #TODO add try except blocks for when the JSON isn't valid which is a
+    #TODO JSONDecodeError and then print the string results of what the API
+    #TODO endpoint returns
     v2_rep = requests.get(v2_api_url, headers=user_agent, verify=False)
-    v2_dict = v2_rep.json()
-
-    #this pulls the data.nba.com response
     pbp_rep = requests.get(pbp_api_url, headers=user_agent, verify=False)
+
+    v2_dict = v2_rep.json()
     pbp_dict = pbp_rep.json()
 
     return v2_dict, pbp_dict
 
-def get_lineup_api():
-    pass
+def get_lineup_api(season_string, away_team_id, home_team_id,
+                   season_type, period, game_date):
+    '''
+    function pulls the possible lineups for the given period and game id for
+    both the away and home teams
+
+    Inputs:
+    season_string      - string representing season usually in form of 2017-18
+    away_team_id       - away team team id
+    home_team_id       - home team team id
+    season_type        - type of game: Regular Season, playoffs etc.
+    period             - period of game
+    game_date          - date of game
+
+    Outputs:
+    home_dict          - dictionary of possible home lineups
+    away_dict          - dicitonary of possible away lineups
+    '''
+
+    home_lineup_api = ('https://stats.nba.com/stats/leaguedashlineups?'
+                       f'Conference=&DateFrom={game_date}&DateTo={game_date}'
+                       '&Division=&GameSegment=&GroupQuantity=5&LastNGames=0'
+                       '&LeagueID=&Location=&MeasureType=Base&Month=0&'
+                       f'OpponentTeamID={away_team_id}&Outcome=&PORound=&'
+                       f'PaceAdjust=N&PerMode=Totals&Period={period}&'
+                       f'PlusMinus=N&Rank=N&Season={season_string}&'
+                       f'SeasonSegment=&SeasonType={season_type}'
+                       '&ShotClockRange=&TeamID=&VsConference=&VsDivision=')
+
+    away_lineup_api = ('https://stats.nba.com/stats/leaguedashlineups?'
+                       f'Conference=&DateFrom={game_date}&DateTo={game_date}'
+                       '&Division=&GameSegment=&GroupQuantity=5&LastNGames=0'
+                       '&LeagueID=&Location=&MeasureType=Base&Month=0&'
+                       f'OpponentTeamID={home_team_id}&Outcome=&PORound=&'
+                       f'PaceAdjust=N&PerMode=Totals&Period={period}&'
+                       f'PlusMinus=N&Rank=N&Season={season_string}&'
+                       f'SeasonSegment=&SeasonType={season_type}'
+                       '&ShotClockRange=&TeamID=&VsConference=&VsDivision=')
+
+    #TODO change the verify from false in final release
+    #TODO add try except blocks for when the JSON isn't valid which is a
+    #TODO JSONDecodeError and then print the string results of what the API
+    #TODO endpoint returns
+    home_lineup_req = requests.get(home_lineup_api,
+                                   headers=user_agent, verify=False)
+    away_lineup_req = requests.get(away_lineup_api,
+                                   headers=user_agent, verify=False)
+
+    home_dict = home_lineup_req.json()
+    away_dict = away_lineup_req.json()
+
+    return home_dict, away_dict
