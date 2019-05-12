@@ -526,6 +526,10 @@ def calc_points_made(row):
         return 0
 
 
+#TODO 2019-05-12 work on this stuff
+#TODO refactor this to take the JSON from the api calls and return a dataframe
+#TODO that will then be fed into the lineups function. Create another function
+#TODO that wraps them all together that the nba_scraper module will call
 def scrape_pbp(game_id, user_agent=user_agent):
     '''
     This function scrapes both of the pbp urls and returns a joined/cleaned
@@ -547,57 +551,50 @@ def scrape_pbp(game_id, user_agent=user_agent):
                    '3': 'All+Star', '4': 'Playoffs'}
     season_type = season_dict[game_id[2]]
     season = 2000 + int(game_id[3:5])
-    v2_season = f'{season - 1}-{str(season)[2:]}'
-    pbp_season = f'{season}'
 
-    v2_dict, pbp_dict = get_pbp_api(v2_season, pbp_season,
-                                    game_id, season_type)
+    v2_dict, pbp_dict = get_pbp_api(f'{season - 1}-{str(season)[2:]}',
+                                    str(season), game_id, season_type)
 
     #converting stats.nba.com json into pandas dataframe
-    pbp_v2_headers = v2_dict['resultSets'][0]['headers']
-    pbp_v2_data = v2_dict['resultSets'][0]['rowSet']
-    pbp_v2_df = pd.DataFrame(pbp_v2_data, columns=pbp_v2_headers)
+    pbp_v2_df = pd.DataFrame(v2_dict['resultSets'][0]['rowSet'],
+                             columns=v2_dict['resultSets'][0]['headers'])
     pbp_v2_df.columns = list(map(str.lower, pbp_v2_df.columns))
 
 
     #converting data.nba.com json to dataframe
     pbp_df_list = []
-
     for qtr in range(len(pbp_dict['g']['pd'])):
         pbp_df_list.append(pd.DataFrame(pbp_dict['g']['pd'][qtr]['pla']))
+    pbp_df = pd.concat(pbp_df_list)
 
     #pulling the home and away team abbreviations and the game date
     gcode = pbp_dict['g']['gcode'].split('/')
+
     #TODO find some way of getting date from stats.nba.com instead of
     #TODO data.nba.com so that way can extend to past seasons
-    date = gcode[0]
-    teams = gcode[1]
-    home_team_abbrev = teams[3:]
-    away_team_abbrev = teams[:3]
-    pbp_df = pd.concat(pbp_df_list)
 
     #joining the two dataframes together and only pulling in relavent columns
     clean_df = pbp_v2_df.merge(pbp_df[['evt', 'locX', 'locY', 'hs', 'vs', 'de']],
                                left_on='eventnum', right_on='evt')
 
     #add date and team abbrev columns to dataframe
-    clean_df.loc[:, 'home_team_abbrev'] = home_team_abbrev
-    clean_df.loc[:, 'away_team_abbrev'] = away_team_abbrev
-    clean_df.loc[:, 'game_date'] = date
+    clean_df.loc[:, 'home_team_abbrev'] = gcode[1][3:]
+    clean_df.loc[:, 'away_team_abbrev'] = gcode[1][:3]
+    clean_df.loc[:, 'game_date'] = gcode[0]
     clean_df.loc[:, 'game_date'] = clean_df.loc[:, 'game_date'].astype('datetime64[ns]')
     clean_df.loc[:, ('season')] = np.where(clean_df.game_date.dt.month.isin([10, 11, 12]),
                                            clean_df.game_date.dt.year + 1,
                                            clean_df.game_date.dt.year)
 
     #code to properly get the team ids as the scientific notation cuts off some digits
-    home_team_id = clean_df[
+    clean_df.loc[:, 'home_team_id'] = clean_df[
         clean_df['player1_team_abbreviation'] ==
-        home_team_abbrev]['player1_team_id'].astype(int).unique()
+        gcode[1][3:]]['player1_team_id'].astype(int).unique()
 
-    away_team_id = clean_df[clean_df['player1_team_abbreviation'] == away_team_abbrev]['player1_team_id'].astype(
-        int).unique()
-    clean_df.loc[:, 'home_team_id'] = home_team_id
-    clean_df.loc[:, 'away_team_id'] = away_team_id
+    clean_df.loc[:, 'away_team_id'] = clean_df[
+        clean_df['player1_team_abbreviation'] == gcode[1][:3]]\
+        ['player1_team_id'].astype(int).unique()
+
 
     #create an event team colum
     clean_df['event_team'] = np.where(clean_df['homedescription'].isnull(),
@@ -627,23 +624,18 @@ def scrape_pbp(game_id, user_agent=user_agent):
     clean_df['shot_type'] = clean_df.apply(parse_shot_types, axis=1)
 
     #Clean time to get a seconds elapsed column
-
-
     clean_df['seconds_elapsed'] = clean_df.apply(create_seconds_elapsed, axis=1)
 
     #calculate event length of each even in seconds
     clean_df['event_length'] = clean_df['seconds_elapsed'] - clean_df['seconds_elapsed'].shift(1)
 
     #determine whether shot was a three pointer
-
     clean_df['is_three'] = np.where(clean_df['de'].str.contains('3pt'), 1, 0)
 
     #determine points earned
-
     clean_df['points_made'] = clean_df.apply(calc_points_made, axis=1)
 
     #create columns that determine if rebound is offenseive or deffensive
-
     clean_df['is_d_rebound'] = np.where((clean_df['event_type_de'] == 'rebound') &
                                         (clean_df['event_team'] != clean_df['event_team'].shift(1)), 1, 0)
 
@@ -652,13 +644,10 @@ def scrape_pbp(game_id, user_agent=user_agent):
                                         & (clean_df['event_type_de'].shift(1) != 'free-throw'), 1, 0)
 
     #create columns to determine turnovers and steals
-
     clean_df['is_turnover'] = np.where(clean_df['de'].str.contains('Turnover'), 1, 0)
     clean_df['is_steal'] = np.where(clean_df['de'].str.contains('Steal'), 1, 0)
 
     #determine what type of fouls are being commited
-
-
     clean_df['foul_type'] = clean_df.apply(parse_foul, axis=1)
 
     # determine if a shot is a putback off an offensive reboundk
