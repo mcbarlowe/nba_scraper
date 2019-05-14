@@ -35,7 +35,7 @@ def test_lineup_scrape():
 
     game_df = sf.scrape_pbp(v2_dict, pbp_dict)
 
-    game_df = sf.get_lineup(game_df[game_df['period'] == 1], home_lineups,
+    game_df = sf.get_lineup(game_df[game_df['period'] == 1].copy(), home_lineups,
                             away_lineups, game_df)
 
     assert isinstance(game_df, pd.DataFrame)

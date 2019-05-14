@@ -124,6 +124,11 @@ def get_date_games(from_date, to_date):
     return game_ids
 
 
+# 2019-05-12 by Matthew Barlowe
+# this was the old way to computed the lineups for each event. I'm leaving it in
+# because using .iloc it was about 30 times faster than my refactor. Using .iat
+# it seems to be about the same if not a little slower and I'm hoping someday I
+# actually figure out why that is.
 def get_lineups(dataframe, season_type):
     '''
     This function gets the lineups for the game and creates columns
@@ -359,51 +364,52 @@ def get_lineups(dataframe, season_type):
                 home_ids_names = [ids for ids in home_ids_names if
                                   ids[0] != period_df.iloc[i, :]['player1_id']]
                 home_ids_names.append((period_df.iloc[i, 21], period_df.iloc[i, 22]))
-                period_df.iloc[i, 63] = home_ids_names[0][0]
-                period_df.iloc[i, 62] = home_ids_names[0][1]
-                period_df.iloc[i, 65] = home_ids_names[1][0]
-                period_df.iloc[i, 64] = home_ids_names[1][1]
-                period_df.iloc[i, 67] = home_ids_names[2][0]
-                period_df.iloc[i, 66] = home_ids_names[2][1]
-                period_df.iloc[i, 69] = home_ids_names[3][0]
-                period_df.iloc[i, 68] = home_ids_names[3][1]
-                period_df.iloc[i, 71] = home_ids_names[4][0]
-                period_df.iloc[i, 70] = home_ids_names[4][1]
-                period_df.iloc[i, 73] = away_ids_names[0][0]
-                period_df.iloc[i, 72] = away_ids_names[0][1]
-                period_df.iloc[i, 75] = away_ids_names[1][0]
-                period_df.iloc[i, 74] = away_ids_names[1][1]
-                period_df.iloc[i, 77] = away_ids_names[2][0]
-                period_df.iloc[i, 76] = away_ids_names[2][1]
-                period_df.iloc[i, 79] = away_ids_names[3][0]
-                period_df.iloc[i, 78] = away_ids_names[3][1]
-                period_df.iloc[i, 81] = away_ids_names[4][0]
-                period_df.iloc[i, 80] = away_ids_names[4][1]
+
+                period_df.iat[i, 63] = home_ids_names[0][0]
+                period_df.iat[i, 62] = home_ids_names[0][1]
+                period_df.iat[i, 65] = home_ids_names[1][0]
+                period_df.iat[i, 64] = home_ids_names[1][1]
+                period_df.iat[i, 67] = home_ids_names[2][0]
+                period_df.iat[i, 66] = home_ids_names[2][1]
+                period_df.iat[i, 69] = home_ids_names[3][0]
+                period_df.iat[i, 68] = home_ids_names[3][1]
+                period_df.iat[i, 71] = home_ids_names[4][0]
+                period_df.iat[i, 70] = home_ids_names[4][1]
+                period_df.iat[i, 73] = away_ids_names[0][0]
+                period_df.iat[i, 72] = away_ids_names[0][1]
+                period_df.iat[i, 75] = away_ids_names[1][0]
+                period_df.iat[i, 74] = away_ids_names[1][1]
+                period_df.iat[i, 77] = away_ids_names[2][0]
+                period_df.iat[i, 76] = away_ids_names[2][1]
+                period_df.iat[i, 79] = away_ids_names[3][0]
+                period_df.iat[i, 78] = away_ids_names[3][1]
+                period_df.iat[i, 81] = away_ids_names[4][0]
+                period_df.iat[i, 80] = away_ids_names[4][1]
             elif (period_df.iloc[i, :]['event_type_de'] == 'substitution' and
                   pd.isnull(period_df.iloc[i, :]['homedescription']) == 1):
                 away_ids_names = [ids for ids in away_ids_names if
                                   ids[0] != period_df.iloc[i, :]['player1_id']]
                 away_ids_names.append((period_df.iloc[i, 21], period_df.iloc[i, 22]))
-                period_df.iloc[i, 63] = home_ids_names[0][0]
-                period_df.iloc[i, 62] = home_ids_names[0][1]
-                period_df.iloc[i, 65] = home_ids_names[1][0]
-                period_df.iloc[i, 64] = home_ids_names[1][1]
-                period_df.iloc[i, 67] = home_ids_names[2][0]
-                period_df.iloc[i, 66] = home_ids_names[2][1]
-                period_df.iloc[i, 69] = home_ids_names[3][0]
-                period_df.iloc[i, 68] = home_ids_names[3][1]
-                period_df.iloc[i, 71] = home_ids_names[4][0]
-                period_df.iloc[i, 70] = home_ids_names[4][1]
-                period_df.iloc[i, 73] = away_ids_names[0][0]
-                period_df.iloc[i, 72] = away_ids_names[0][1]
-                period_df.iloc[i, 75] = away_ids_names[1][0]
-                period_df.iloc[i, 74] = away_ids_names[1][1]
-                period_df.iloc[i, 77] = away_ids_names[2][0]
-                period_df.iloc[i, 76] = away_ids_names[2][1]
-                period_df.iloc[i, 79] = away_ids_names[3][0]
-                period_df.iloc[i, 78] = away_ids_names[3][1]
-                period_df.iloc[i, 81] = away_ids_names[4][0]
-                period_df.iloc[i, 80] = away_ids_names[4][1]
+                period_df.iat[i, 63] = home_ids_names[0][0]
+                period_df.iat[i, 62] = home_ids_names[0][1]
+                period_df.iat[i, 65] = home_ids_names[1][0]
+                period_df.iat[i, 64] = home_ids_names[1][1]
+                period_df.iat[i, 67] = home_ids_names[2][0]
+                period_df.iat[i, 66] = home_ids_names[2][1]
+                period_df.iat[i, 69] = home_ids_names[3][0]
+                period_df.iat[i, 68] = home_ids_names[3][1]
+                period_df.iat[i, 71] = home_ids_names[4][0]
+                period_df.iat[i, 70] = home_ids_names[4][1]
+                period_df.iat[i, 73] = away_ids_names[0][0]
+                period_df.iat[i, 72] = away_ids_names[0][1]
+                period_df.iat[i, 75] = away_ids_names[1][0]
+                period_df.iat[i, 74] = away_ids_names[1][1]
+                period_df.iat[i, 77] = away_ids_names[2][0]
+                period_df.iat[i, 76] = away_ids_names[2][1]
+                period_df.iat[i, 79] = away_ids_names[3][0]
+                period_df.iat[i, 78] = away_ids_names[3][1]
+                period_df.iat[i, 81] = away_ids_names[4][0]
+                period_df.iat[i, 80] = away_ids_names[4][1]
             else:
                 period_df.iloc[i, 63] = home_ids_names[0][0]
                 period_df.iloc[i, 62] = home_ids_names[0][1]
@@ -428,7 +434,7 @@ def get_lineups(dataframe, season_type):
         periods.append(period_df)
 
     # concatting all the periods into one dataframe and returning it
-    lineup_df = pd.concat(periods).reset_index()
+    lineup_df = pd.concat(periods).reset_index(drop=True)
     return lineup_df
 
 
@@ -1126,10 +1132,9 @@ def main_scrape(game_id):
                                game_df.home_team_id.unique()[0],
                                season_type, period,
                                str(game_df.game_date.unique()[0])[:10])
-        periods.append(get_lineup(game_df[game_df['period'] == period],
+        periods.append(get_lineup(game_df[game_df['period'] == period].copy(),
                                   home_lineup_dict, away_lineup_dict,
                                   game_df))
-    game_df = pd.concat(periods)
-    #game_df = get_lineups(game_df, season_type)
+    game_df = pd.concat(periods).reset_index(drop=True)
 
     return game_df
