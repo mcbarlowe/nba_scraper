@@ -34,7 +34,6 @@ def test_lineup_scrape():
         pbp_dict = json.load(pbp)
 
     game_df = sf.scrape_pbp(v2_dict, pbp_dict)
-    print(game_df.head())
 
     game_df = sf.get_lineup(game_df[game_df['period'] == 1], home_lineups,
                             away_lineups, game_df)

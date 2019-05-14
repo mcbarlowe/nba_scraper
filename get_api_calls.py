@@ -5,8 +5,8 @@ import json
 import nba_scraper.scrape_functions as sf
 
 
-HOME_DICT, AWAY_DICT = sf.get_lineup_api('2018-19', 1610612755, 1610612738,
-                                         'Regular+Season', 1, '2018-10-16')
+HOME_DICT, AWAY_DICT = sf.get_lineup_api('2017-18', 1610612739, 1610612738,
+                                         'Regular+Season', 1, '2017-10-17')
 V2_DICT, PBP_DICT = sf.get_pbp_api('201718', '2017',
                                    '0021700001', 'Regular+Season')
 

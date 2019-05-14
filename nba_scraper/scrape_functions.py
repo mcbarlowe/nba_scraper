@@ -139,18 +139,20 @@ def get_lineups(dataframe, season_type):
 
     periods = []
     for period in range(1, dataframe['period'].max() + 1):
+        start = time.time()
         #subsets main dataframe by period and subsets into a home and away subs
         period_df = dataframe[dataframe['period'] == period].reset_index()
         subs_df = period_df[(period_df.event_type_de == 'substitution')]
         away_subs = subs_df[pd.isnull(subs_df['visitordescription']) == 0]
         home_subs = subs_df[pd.isnull(subs_df['homedescription']) == 0]
-
+        print(f"it took {time.time()-start} seconds to subset")
         #gets the index of the first sub for home and away to get the players who started
         #the period by subsetting the dataframe to all actions before the first sub for
         #each team
         away_indexes = list(away_subs.index)
         home_indexes = list(home_subs.index)
 
+        start = time.time()
         home_lineup_dict, away_lineup_dict = \
                 get_lineup_api((f'{period_df.season.unique()[0]-1}'
                                 f'-{str(period_df.season.unique()[0])[2:]}'),
@@ -158,12 +160,9 @@ def get_lineups(dataframe, season_type):
                                period_df.home_team_id.unique()[0],
                                season_type, period,
                                str(period_df.game_date.unique()[0])[:10])
-        print(period_df.away_team_id.unique()[0])
-        print(period_df.home_team_id.unique()[0])
-        print(season_type)
-        print(period)
-        print(str(period_df.game_date.unique()[0])[:10])
 
+        print(f"it took {time.time()-start} seconds to call API")
+        start = time.time()
         #extract the player ids of each lineup
         home_lineups = []
         away_lineups = []
@@ -181,9 +180,11 @@ def get_lineups(dataframe, season_type):
         for i, _ in enumerate(away_lineups):
             away_lineups[i] = list(map(int, list(filter(None, away_lineups[i][0].split('-')))))
 
+        print(f"it took {time.time()-start} seconds to parse API call")
         #pulls the unique values from the whole period dataframe if there are no subs
         #then it just pulls the unique ids from the from the dataframe itself because
         #the away/home indexes will be an empty list
+        start = time.time()
         try:
             away_starting_line = list(
                 period_df[(period_df.event_team ==
@@ -223,6 +224,7 @@ def get_lineups(dataframe, season_type):
                           & (period_df.is_block == 0)
                           & (period_df.is_steal == 0)]['player1_id'].unique())
 
+        print(f"it took {time.time()-start} seconds to check to see if there were five unique ids before first sub")
         # if the lineups aren't equal to five players then this code loops through the
         # dataframe for the period and seperates players into sets of whether they
         # started the period or were a sub by looking at each substitution and event
@@ -230,6 +232,7 @@ def get_lineups(dataframe, season_type):
         # it then looks at the lineups returned from the lineup api and removes each
         # lineup that has a player that is in the subs set which will return only one
         # lineup and that lineup is set for the starting lineup
+        start = time.time()
         if len(away_starting_line) < 5:
             lineups = set()
             subs = set()
@@ -282,6 +285,8 @@ def get_lineups(dataframe, season_type):
             away_ids_names = [
                 (x, dataframe[dataframe['player1_id'] == x]
                  ['player1_name'].unique()[0]) for x in away_starting_line]
+        print(f"it took {time.time()-start} seconds to determine away lineup by elmination")
+        start = time.time()
         # repeating the process for home players
         if len(home_starting_line) < 5:
             lineups = set()
@@ -325,6 +330,8 @@ def get_lineups(dataframe, season_type):
                 (x, period_df[period_df['player1_id'] == x]
                  ['player1_name'].unique()[0]) for x in home_starting_line]
 
+        print(f"it took {time.time()-start} seconds to determine home lineup by elmination")
+        start = time.time()
         # creating columns to populate with players on the court
         period_df['home_player_1'] = ''
         period_df['home_player_1_id'] = ''
@@ -346,10 +353,13 @@ def get_lineups(dataframe, season_type):
         period_df['away_player_4_id'] = ''
         period_df['away_player_5'] = ''
         period_df['away_player_5_id'] = ''
+        print(f"it took {time.time()-start} seconds to create empty columns")
         # add players to the columns by looping through the dataframe and putting the
         # players in for each row using the starting lineup list. If there is a
         # substitution event then the player coming on replaces the player going off in
         # the list this is done for the whole period
+        start = time.time()
+
         for i in range(period_df.shape[0]):
             if (period_df.iloc[i, :]['event_type_de'] == 'substitution' and
                     pd.isnull(period_df.iloc[i, :]['visitordescription']) == 1):
@@ -422,6 +432,7 @@ def get_lineups(dataframe, season_type):
                 period_df.iloc[i, 78] = away_ids_names[3][1]
                 period_df.iloc[i, 81] = away_ids_names[4][0]
                 period_df.iloc[i, 80] = away_ids_names[4][1]
+        print(f"it took {time.time() - start} to fill columns")
         periods.append(period_df)
 
     # concatting all the periods into one dataframe and returning it
@@ -783,7 +794,6 @@ def get_lineup_api(season_string, away_team_id, home_team_id,
                        f'SeasonSegment=&SeasonType={season_type}'
                        '&ShotClockRange=&TeamID=&VsConference=&VsDivision=')
 
-    print(away_lineup_api)
     #TODO change the verify from false in final release
     try:
         home_lineup_req = requests.get(home_lineup_api,
@@ -805,53 +815,63 @@ def get_lineup_api(season_string, away_team_id, home_team_id,
 
     return home_dict, away_dict
 
-def get_lineup(period_df, home_lineups, away_lineups, dataframe):
+def get_lineup(period_df, home_lineup_dict, away_lineup_dict, dataframe):
     '''
     this function calculates the lineups for each team at each event and then
     appends it to the current dataframe. This only works for one period at a
     time
 
     Inputs:
-    period_df     - the main game pbp dataframe subsetted to only one period
-                    in the game
-    home_lineups  - home team lineups API response from that period
-    away_lineups  - away team lineups API response from taht period
-    dataframe     - full game dataframe. This is passed to get players name from
-                    id in case the player didn't have an event in that period.
+    period_df         - the main game pbp dataframe subsetted to only one period
+                        in the game
+    home_lineup_dict  - home team lineups API response from that period
+    away_lineup_dict  - away team lineups API response from taht period
+    dataframe         - full game dataframe. This is passed to get players name from
+                        id in case the player didn't have an event in that period.
 
     Outputs:
     lineup_df     - period_df with each teams lineups calculate and added to the
                     dataframe
     '''
 
+    start = time.time()
+    #subsets main dataframe by period and subsets into a home and away subs
     subs_df = period_df[(period_df.event_type_de == 'substitution')]
+    away_subs = subs_df[pd.isnull(subs_df['visitordescription']) == 0]
+    home_subs = subs_df[pd.isnull(subs_df['homedescription']) == 0]
+    print(f"it took {time.time()-start} seconds to subset dataframe")
 
     #gets the index of the first sub for home and away to get the players who started
     #the period by subsetting the dataframe to all actions before the first sub for
     #each team
-    away_index = subs_df[pd.isnull(subs_df['visitordescription']) == 0].index[0]
-    home_index = subs_df[pd.isnull(subs_df['homedescription']) == 0].index[0]
+    away_indexes = list(away_subs.index)
+    home_indexes = list(home_subs.index)
 
+
+    start = time.time()
     #extract the player ids of each lineup
-    h_lineups = []
-    a_lineups = []
+    home_lineups = []
+    away_lineups = []
 
-    for lineup in home_lineups['resultSets'][0]['rowSet']:
-        h_lineups.append([lineup[1]])
+    for lineup in home_lineup_dict['resultSets'][0]['rowSet']:
+        home_lineups.append([lineup[1]])
 
-    for lineup in away_lineups['resultSets'][0]['rowSet']:
-        a_lineups.append([lineup[1]])
-
+    for lineup in away_lineup_dict['resultSets'][0]['rowSet']:
+        away_lineups.append([lineup[1]])
+    print(f"it took {time.time()-start} seconds to parse API lineups")
     #clean the id strings into a list of ids for each lineup and convert them to ints
-    for i, _ in enumerate(h_lineups):
-        h_lineups[i] = list(map(int, list(filter(None, h_lineups[i][0].split('-')))))
+    start=time.time()
+    for i, _ in enumerate(home_lineups):
+        home_lineups[i] = list(map(int, list(filter(None, home_lineups[i][0].split('-')))))
 
-    for i, _ in enumerate(a_lineups):
-        a_lineups[i] = list(map(int, list(filter(None, a_lineups[i][0].split('-')))))
+    for i, _ in enumerate(away_lineups):
+        away_lineups[i] = list(map(int, list(filter(None, away_lineups[i][0].split('-')))))
 
+    print(f"it took {time.time()-start} seconds to parse lineups into lists of ids")
     #pulls the unique values from the whole period dataframe if there are no subs
     #then it just pulls the unique ids from the from the dataframe itself because
     #the away/home indexes will be an empty list
+    start = time.time()
     try:
         away_starting_line = list(
             period_df[(period_df.event_team ==
@@ -861,7 +881,7 @@ def get_lineup(period_df, home_lineups, away_lineups, dataframe):
                          period_df['away_team_abbrev'].unique()[0])
                       & (period_df.is_block == 0)
                       & (period_df.is_steal == 0)]
-            .loc[:away_index, :]['player1_id'].unique())
+            .loc[:away_indexes[0], :]['player1_id'].unique())
     except IndexError:
         away_starting_line = list(
             period_df[(period_df.event_team ==
@@ -880,7 +900,7 @@ def get_lineup(period_df, home_lineups, away_lineups, dataframe):
                          period_df['home_team_abbrev'].unique()[0])
                       & (period_df.is_block == 0)
                       & (period_df.is_steal == 0)]
-            .loc[:home_index, :]['player1_id'].unique())
+            .loc[:home_indexes[0], :]['player1_id'].unique())
     except IndexError:
         home_starting_line = list(
             period_df[(period_df.event_team ==
@@ -890,6 +910,7 @@ def get_lineup(period_df, home_lineups, away_lineups, dataframe):
                          period_df['home_team_abbrev'].unique()[0])
                       & (period_df.is_block == 0)
                       & (period_df.is_steal == 0)]['player1_id'].unique())
+    print(f"it took {time.time()-start} seconds to check to see if five unique ids were in pbp before first sub")
     # if the lineups aren't equal to five players then this code loops through the
     # dataframe for the period and seperates players into sets of whether they
     # started the period or were a sub by looking at each substitution and event
@@ -897,6 +918,7 @@ def get_lineup(period_df, home_lineups, away_lineups, dataframe):
     # it then looks at the lineups returned from the lineup api and removes each
     # lineup that has a player that is in the subs set which will return only one
     # lineup and that lineup is set for the starting lineup
+    start = time.time()
     if len(away_starting_line) < 5:
         lineups = set()
         subs = set()
@@ -915,12 +937,12 @@ def get_lineup(period_df, home_lineups, away_lineups, dataframe):
                     if (period_df.iloc[i, :]['player1_id'] != 0 and
                             period_df.iloc[i, :]['player1_id'] not in subs):
                         lineups.add(period_df.iloc[i, :]['player1_id'])
-                # if event is a substitutoin then it adds the
-                # player coming out to lineups set
-                # if it is not in the subs set and adds player
-                # going in to the subs set if they
-                # are not already in the lineups set in case
-                # someone is subbed out and then subbed back in.
+                        # if event is a substitutoin then it adds the
+                        # player coming out to lineups set
+                        # if it is not in the subs set and adds player
+                        # going in to the subs set if they
+                        # are not already in the lineups set in case
+                        # someone is subbed out and then subbed back in.
                 else:
                     if period_df.iloc[i, :]['player2_id'] not in lineups:
                         subs.add(period_df.iloc[i, :]['player2_id'])
@@ -929,26 +951,29 @@ def get_lineup(period_df, home_lineups, away_lineups, dataframe):
 
                 if len(lineups) == 5:
                     break
-        # check here to see if we have five players once loop is done if not then
-        # the subs list is checked against the lineups api results and removes every
-        # every lineup combination that has a sub in it which should only leave the
-        # true starting lineup
+                    # check here to see if we have five players once loop is done if not then
+                    # the subs list is checked against the lineups api results and removes every
+                    # every lineup combination that has a sub in it which should only leave the
+                    # true starting lineup
         if len(lineups) == 5:
             away_ids_names = [
                 (x, dataframe[dataframe['player1_id'] == x]
                  ['player1_name'].unique()[0]) for x in lineups]
         else:
             for player in subs:
-                for lineup in list(a_lineups):
+                for lineup in list(away_lineups):
                     if player in lineup:
-                        a_lineups.remove(lineup)
+                        away_lineups.remove(lineup)
             away_ids_names = [
                 (x, dataframe[dataframe['player1_id'] == x]
-                 ['player1_name'].unique()[0]) for x in a_lineups[0]]
+                 ['player1_name'].unique()[0]) for x in away_lineups[0]]
     else:
         away_ids_names = [
-            (x, dataframe[dataframe['player1_id'] == x]['player1_name'].unique()[0]) for x in away_starting_line]
+            (x, dataframe[dataframe['player1_id'] == x]
+             ['player1_name'].unique()[0]) for x in away_starting_line]
+    print(f"it took {time.time()-start} seconds to determine starting away lineup by elimination")
     # repeating the process for home players
+    start = time.time()
     if len(home_starting_line) < 5:
         lineups = set()
         subs = set()
@@ -980,116 +1005,123 @@ def get_lineup(period_df, home_lineups, away_lineups, dataframe):
                  ['player1_name'].unique()[0]) for x in lineups]
         else:
             for player in subs:
-                for lineup in list(h_lineups):
+                for lineup in list(home_lineups):
                     if player in lineup:
-                        h_lineups.remove(lineup)
+                        home_lineups.remove(lineup)
             home_ids_names = [
                 (x, dataframe[dataframe['player1_id'] == x]
-                 ['player1_name'].unique()[0]) for x in h_lineups[0]]
+                 ['player1_name'].unique()[0]) for x in home_lineups[0]]
     else:
         home_ids_names = [
             (x, period_df[period_df['player1_id'] == x]
              ['player1_name'].unique()[0]) for x in home_starting_line]
-
+    print(f"it took {time.time()-start} seconds to determine starting home lineup by elimination")
     # creating columns to populate with players on the court
-    period_df['home_player_1'] = ''
-    period_df['home_player_1_id'] = ''
-    period_df['home_player_2'] = ''
-    period_df['home_player_2_id'] = ''
-    period_df['home_player_3'] = ''
-    period_df['home_player_3_id'] = ''
-    period_df['home_player_4'] = ''
-    period_df['home_player_4_id'] = ''
-    period_df['home_player_5'] = ''
-    period_df['home_player_5_id'] = ''
-    period_df['away_player_1'] = ''
-    period_df['away_player_1_id'] = ''
-    period_df['away_player_2'] = ''
-    period_df['away_player_2_id'] = ''
-    period_df['away_player_3'] = ''
-    period_df['away_player_3_id'] = ''
-    period_df['away_player_4'] = ''
-    period_df['away_player_4_id'] = ''
-    period_df['away_player_5'] = ''
-    period_df['away_player_5_id'] = ''
+    start = time.time()
+    period_df.loc[:,'home_player_1'] = ''
+    period_df.loc[:,'home_player_1_id'] = ''
+    period_df.loc[:,'home_player_2'] = ''
+    period_df.loc[:,'home_player_2_id'] = ''
+    period_df.loc[:,'home_player_3'] = ''
+    period_df.loc[:,'home_player_3_id'] = ''
+    period_df.loc[:,'home_player_4'] = ''
+    period_df.loc[:,'home_player_4_id'] = ''
+    period_df.loc[:,'home_player_5'] = ''
+    period_df.loc[:,'home_player_5_id'] = ''
+    period_df.loc[:,'away_player_1'] = ''
+    period_df.loc[:,'away_player_1_id'] = ''
+    period_df.loc[:,'away_player_2'] = ''
+    period_df.loc[:,'away_player_2_id'] = ''
+    period_df.loc[:,'away_player_3'] = ''
+    period_df.loc[:,'away_player_3_id'] = ''
+    period_df.loc[:,'away_player_4'] = ''
+    period_df.loc[:,'away_player_4_id'] = ''
+    period_df.loc[:,'away_player_5'] = ''
+    period_df.loc[:,'away_player_5_id'] = ''
+    print(f"it took {time.time()-start} seconds to create empty columns")
     # add players to the columns by looping through the dataframe and putting the
     # players in for each row using the starting lineup list. If there is a
     # substitution event then the player coming on replaces the player going off in
     # the list this is done for the whole period
+    # TODO rewrite this to be faster because as it is is too slow and I don't
+    # TODO why it is since its the exact same code
+    start = time.time()
     for i in range(period_df.shape[0]):
         if (period_df.iloc[i, :]['event_type_de'] == 'substitution' and
                 pd.isnull(period_df.iloc[i, :]['visitordescription']) == 1):
             home_ids_names = [ids for ids in home_ids_names if
                               ids[0] != period_df.iloc[i, :]['player1_id']]
-            home_ids_names.append((period_df.iloc[i, 21], period_df.iloc[i, 22]))
-            period_df.iloc[i, 63] = home_ids_names[0][0]
-            period_df.iloc[i, 62] = home_ids_names[0][1]
-            period_df.iloc[i, 65] = home_ids_names[1][0]
-            period_df.iloc[i, 64] = home_ids_names[1][1]
-            period_df.iloc[i, 67] = home_ids_names[2][0]
-            period_df.iloc[i, 66] = home_ids_names[2][1]
-            period_df.iloc[i, 69] = home_ids_names[3][0]
-            period_df.iloc[i, 68] = home_ids_names[3][1]
-            period_df.iloc[i, 71] = home_ids_names[4][0]
-            period_df.iloc[i, 70] = home_ids_names[4][1]
-            period_df.iloc[i, 73] = away_ids_names[0][0]
-            period_df.iloc[i, 72] = away_ids_names[0][1]
-            period_df.iloc[i, 75] = away_ids_names[1][0]
-            period_df.iloc[i, 74] = away_ids_names[1][1]
-            period_df.iloc[i, 77] = away_ids_names[2][0]
-            period_df.iloc[i, 76] = away_ids_names[2][1]
-            period_df.iloc[i, 79] = away_ids_names[3][0]
-            period_df.iloc[i, 78] = away_ids_names[3][1]
-            period_df.iloc[i, 81] = away_ids_names[4][0]
-            period_df.iloc[i, 80] = away_ids_names[4][1]
+            home_ids_names.append((period_df.iloc[i, 20], period_df.iloc[i, 21]))
+            period_df.iloc[i, 62] = home_ids_names[0][0]
+            period_df.iloc[i, 61] = home_ids_names[0][1]
+            period_df.iloc[i, 64] = home_ids_names[1][0]
+            period_df.iloc[i, 63] = home_ids_names[1][1]
+            period_df.iloc[i, 66] = home_ids_names[2][0]
+            period_df.iloc[i, 65] = home_ids_names[2][1]
+            period_df.iloc[i, 68] = home_ids_names[3][0]
+            period_df.iloc[i, 67] = home_ids_names[3][1]
+            period_df.iloc[i, 70] = home_ids_names[4][0]
+            period_df.iloc[i, 69] = home_ids_names[4][1]
+            period_df.iloc[i, 72] = away_ids_names[0][0]
+            period_df.iloc[i, 71] = away_ids_names[0][1]
+            period_df.iloc[i, 74] = away_ids_names[1][0]
+            period_df.iloc[i, 73] = away_ids_names[1][1]
+            period_df.iloc[i, 76] = away_ids_names[2][0]
+            period_df.iloc[i, 75] = away_ids_names[2][1]
+            period_df.iloc[i, 78] = away_ids_names[3][0]
+            period_df.iloc[i, 77] = away_ids_names[3][1]
+            period_df.iloc[i, 80] = away_ids_names[4][0]
+            period_df.iloc[i, 79] = away_ids_names[4][1]
         elif (period_df.iloc[i, :]['event_type_de'] == 'substitution' and
               pd.isnull(period_df.iloc[i, :]['homedescription']) == 1):
             away_ids_names = [ids for ids in away_ids_names if
                               ids[0] != period_df.iloc[i, :]['player1_id']]
-            away_ids_names.append((period_df.iloc[i, 21], period_df.iloc[i, 22]))
-            period_df.iloc[i, 63] = home_ids_names[0][0]
-            period_df.iloc[i, 62] = home_ids_names[0][1]
-            period_df.iloc[i, 65] = home_ids_names[1][0]
-            period_df.iloc[i, 64] = home_ids_names[1][1]
-            period_df.iloc[i, 67] = home_ids_names[2][0]
-            period_df.iloc[i, 66] = home_ids_names[2][1]
-            period_df.iloc[i, 69] = home_ids_names[3][0]
-            period_df.iloc[i, 68] = home_ids_names[3][1]
-            period_df.iloc[i, 71] = home_ids_names[4][0]
-            period_df.iloc[i, 70] = home_ids_names[4][1]
-            period_df.iloc[i, 73] = away_ids_names[0][0]
-            period_df.iloc[i, 72] = away_ids_names[0][1]
-            period_df.iloc[i, 75] = away_ids_names[1][0]
-            period_df.iloc[i, 74] = away_ids_names[1][1]
-            period_df.iloc[i, 77] = away_ids_names[2][0]
-            period_df.iloc[i, 76] = away_ids_names[2][1]
-            period_df.iloc[i, 79] = away_ids_names[3][0]
-            period_df.iloc[i, 78] = away_ids_names[3][1]
-            period_df.iloc[i, 81] = away_ids_names[4][0]
-            period_df.iloc[i, 80] = away_ids_names[4][1]
+            away_ids_names.append((period_df.iloc[i, 20], period_df.iloc[i, 21]))
+            period_df.iloc[i, 62] = home_ids_names[0][0]
+            period_df.iloc[i, 61] = home_ids_names[0][1]
+            period_df.iloc[i, 64] = home_ids_names[1][0]
+            period_df.iloc[i, 63] = home_ids_names[1][1]
+            period_df.iloc[i, 66] = home_ids_names[2][0]
+            period_df.iloc[i, 65] = home_ids_names[2][1]
+            period_df.iloc[i, 68] = home_ids_names[3][0]
+            period_df.iloc[i, 67] = home_ids_names[3][1]
+            period_df.iloc[i, 70] = home_ids_names[4][0]
+            period_df.iloc[i, 69] = home_ids_names[4][1]
+            period_df.iloc[i, 72] = away_ids_names[0][0]
+            period_df.iloc[i, 71] = away_ids_names[0][1]
+            period_df.iloc[i, 74] = away_ids_names[1][0]
+            period_df.iloc[i, 73] = away_ids_names[1][1]
+            period_df.iloc[i, 76] = away_ids_names[2][0]
+            period_df.iloc[i, 75] = away_ids_names[2][1]
+            period_df.iloc[i, 78] = away_ids_names[3][0]
+            period_df.iloc[i, 77] = away_ids_names[3][1]
+            period_df.iloc[i, 80] = away_ids_names[4][0]
+            period_df.iloc[i, 79] = away_ids_names[4][1]
         else:
-            period_df.iloc[i, 63] = home_ids_names[0][0]
-            period_df.iloc[i, 62] = home_ids_names[0][1]
-            period_df.iloc[i, 65] = home_ids_names[1][0]
-            period_df.iloc[i, 64] = home_ids_names[1][1]
-            period_df.iloc[i, 67] = home_ids_names[2][0]
-            period_df.iloc[i, 66] = home_ids_names[2][1]
-            period_df.iloc[i, 69] = home_ids_names[3][0]
-            period_df.iloc[i, 68] = home_ids_names[3][1]
-            period_df.iloc[i, 71] = home_ids_names[4][0]
-            period_df.iloc[i, 70] = home_ids_names[4][1]
-            period_df.iloc[i, 73] = away_ids_names[0][0]
-            period_df.iloc[i, 72] = away_ids_names[0][1]
-            period_df.iloc[i, 75] = away_ids_names[1][0]
-            period_df.iloc[i, 74] = away_ids_names[1][1]
-            period_df.iloc[i, 77] = away_ids_names[2][0]
-            period_df.iloc[i, 76] = away_ids_names[2][1]
-            period_df.iloc[i, 79] = away_ids_names[3][0]
-            period_df.iloc[i, 78] = away_ids_names[3][1]
-            period_df.iloc[i, 81] = away_ids_names[4][0]
-            period_df.iloc[i, 80] = away_ids_names[4][1]
+            period_df.iloc[i, 62] = home_ids_names[0][0]
+            period_df.iloc[i, 61] = home_ids_names[0][1]
+            period_df.iloc[i, 64] = home_ids_names[1][0]
+            period_df.iloc[i, 63] = home_ids_names[1][1]
+            period_df.iloc[i, 66] = home_ids_names[2][0]
+            period_df.iloc[i, 65] = home_ids_names[2][1]
+            period_df.iloc[i, 68] = home_ids_names[3][0]
+            period_df.iloc[i, 67] = home_ids_names[3][1]
+            period_df.iloc[i, 70] = home_ids_names[4][0]
+            period_df.iloc[i, 69] = home_ids_names[4][1]
+            period_df.iloc[i, 72] = away_ids_names[0][0]
+            period_df.iloc[i, 71] = away_ids_names[0][1]
+            period_df.iloc[i, 74] = away_ids_names[1][0]
+            period_df.iloc[i, 73] = away_ids_names[1][1]
+            period_df.iloc[i, 76] = away_ids_names[2][0]
+            period_df.iloc[i, 75] = away_ids_names[2][1]
+            period_df.iloc[i, 78] = away_ids_names[3][0]
+            period_df.iloc[i, 77] = away_ids_names[3][1]
+            period_df.iloc[i, 80] = away_ids_names[4][0]
+            period_df.iloc[i, 79] = away_ids_names[4][1]
 
+    print(f"it took {time.time()-start} seconds to fill lineup columns")
     return period_df
+
 
 def main_scrape(game_id):
     '''
@@ -1116,6 +1148,7 @@ def main_scrape(game_id):
     #TODO what it returns out here
     '''
     periods = []
+    start = time.time()
     for period in range(1, game_df['period'].max() + 1):
         home_lineup_dict, away_lineup_dict = \
                 get_lineup_api((f'{game_df.season.unique()[0]-1}'
@@ -1124,11 +1157,15 @@ def main_scrape(game_id):
                                game_df.home_team_id.unique()[0],
                                season_type, period,
                                str(game_df.game_date.unique()[0])[:10])
+        start1 = time.time()
         periods.append(get_lineup(game_df[game_df['period'] == period],
                                   home_lineup_dict, away_lineup_dict,
                                   game_df))
+        print(f"it took {time.time()-start1} seconds to calc period lineups from api")
     game_df = pd.concat(periods)
     '''
+
     game_df = get_lineups(game_df, season_type)
+    #print(f"it took {time.time()-start} seconds to compute lineups")
 
     return game_df
