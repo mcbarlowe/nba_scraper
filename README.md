@@ -2,6 +2,7 @@
 [![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](https://github.com/mcbarlowe/nba_scraper/commits/master)
 [![PyPI version](https://badge.fury.io/py/nba-scraper.svg)](https://badge.fury.io/py/nba-scraper)
 [![Downloads](https://pepy.tech/badge/nba-scraper)](https://pepy.tech/project/nba-scraper)
+[![Build Status](https://travis-ci.org/mcbarlowe/nba_scraper.svg?branch=master)](https://travis-ci.org/mcbarlowe/nba_scraper)
 
 # `nba_scraper`
 
