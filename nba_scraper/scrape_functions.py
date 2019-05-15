@@ -7,6 +7,7 @@ Email: matt@barloweanalytics.com
 This file contains the main functions to scrape and compile the NBA api and
 return a CSV file of the pbp for the provided game
 '''
+import datetime
 import time
 import sys
 import json
@@ -70,16 +71,16 @@ def get_season(date):
     Outputs:
     season - e.g. 2018
     '''
-    year = str(date.tm_year)[:4]
+    year = str(date.year)[:4]
 
     #TODO Refactor this I don't think we need all these if/else statements
-    if date > time.strptime('-'.join([year, '01-01']), "%Y-%m-%d"):
-        if date < time.strptime('-'.join([year, '09-01']), "%Y-%m-%d"):
+    if date > datetime.datetime.strptime('-'.join([year, '01-01']), "%Y-%m-%d"):
+        if date < datetime.datetime.strptime('-'.join([year, '09-01']), "%Y-%m-%d"):
             return int(year) - 1
         else:
             return int(year)
     else:
-        if date > time.strptime('-'.join([year, '07-01']), "%Y-%m-%d"):
+        if date > datetime.datetime.strptime('-'.join([year, '07-01']), "%Y-%m-%d"):
             return int(year)
         else:
             return int(year) - 1
@@ -97,7 +98,8 @@ def get_date_games(from_date, to_date):
     game_ids - List of game_ids in range
     '''
     game_ids = []
-    from_date, to_date = time.strptime(from_date, "%Y-%m-%d"), time.strptime(to_date, "%Y-%m-%d")
+    from_date = datetime.datetime.strptime(from_date, "%Y-%m-%d")
+    to_date = datetime.datetime.strptime(to_date, "%Y-%m-%d")
 
     # Must check each season in between date range
     for season in range(get_season(from_date), get_season(to_date) + 1):
@@ -106,20 +108,20 @@ def get_date_games(from_date, to_date):
         schedule = requests.get(url, headers=USER_AGENT).json()
         time.sleep(1)
 
+
         for month in schedule['lscd']:
             if month['mscd']['g']:
                 # Assume games in order so first in list is first game in month
-                cur_month = time.strptime(month['mscd']['g'][0]['gdte'], "%Y-%m-%d")
-            else:
-                continue
-
-            # If first game in month doesn't fall in range no need to
-            # check each game for rest of month
-            if to_date >= cur_month >= from_date:
-                for game in month['mscd']['g']:
-                    # Check if individual game in date range
-                    if to_date >= time.strptime(game['gdte'], "%Y-%m-%d") >= from_date:
-                        game_ids.append(game['gid'])
+                cur_month = datetime.datetime.strptime(month['mscd']['g'][0]['gdte'], "%Y-%m-%d")
+            
+                # If first game in month doesn't fall in range no need to check each game for rest of month
+                # Convert from_date to beginning of month as that is where cur_month starts
+                if to_date >= cur_month >= (from_date - datetime.timedelta(from_date.day-1)):
+                    for game in month['mscd']['g']:
+                        #print(game['gdte'])
+                        # Check if individual game in date range
+                        if to_date >= datetime.datetime.strptime(game['gdte'], "%Y-%m-%d") >= from_date:
+                            game_ids.append(game['gid'])
     return game_ids
 
 

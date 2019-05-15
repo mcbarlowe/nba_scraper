@@ -22,5 +22,5 @@ def test_scrape_date_range():
     '''
     this tests the scrape_date_range function to make sure it works
     '''
-    dataframe = ns.scrape_date_range('2017-10-16', '2017-10-16')
+    dataframe = ns.scrape_date_range('2017-10-18', '2017-10-18')
     assert isinstance(dataframe, pd.DataFrame)
