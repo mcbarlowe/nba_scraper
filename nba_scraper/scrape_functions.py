@@ -120,7 +120,6 @@ def get_date_games(from_date, to_date):
                     # Check if individual game in date range
                     if to_date >= time.strptime(game['gdte'], "%Y-%m-%d") >= from_date:
                         game_ids.append(game['gid'])
-
     return game_ids
 
 

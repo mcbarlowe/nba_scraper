@@ -1,6 +1,7 @@
 '''
 unit tests for the nba_scraper module
 '''
+import time
 import json
 import pandas as pd
 import nba_scraper.scrape_functions as sf
@@ -39,3 +40,12 @@ def test_lineup_scrape():
                             away_lineups, game_df)
 
     assert isinstance(game_df, pd.DataFrame)
+
+def test_get_season():
+    '''
+    tests the get get_season function in scraper_functions to make sure it
+    is returning the correct date
+    '''
+    assert sf.get_season(time.strptime('2018-09-01', "%Y-%m-%d")) == 2018
+    assert sf.get_season(time.strptime('2018-04-01', "%Y-%m-%d")) == 2017
+    assert sf.get_season(time.strptime('2018-01-01', "%Y-%m-%d")) == 2017
