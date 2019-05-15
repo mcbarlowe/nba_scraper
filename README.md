@@ -23,9 +23,7 @@ To install this package just type this at the command line:
 
 # Usage
 
-## Scraping Functions
-
-`scrape_game`
+## `scrape_game`
 
 The default data format is a pandas dataframe you can change this to csv
 with the `data_format` parameter. The default file path is the
@@ -43,7 +41,7 @@ users home directory you can change this with the `data_dir` parameter
     # directory
     ns.scrape_game([21800001, 21800002], data_format='csv', data_dir='file/path')
 
-`scrape_season`
+## `scrape_season`
 
 The `data_format` and `data_dir` key words are used the excat same way as
 `scrape_game`. Instead of game ids though, you would pass the season you want
@@ -59,7 +57,7 @@ integer.
     # directory
     ns.scrape_season(2019, data_format='csv', data_dir='file/path')
 
-# `scrape_date_range`
+## `scrape_date_range`
 
 This allows you to scrape all **regular season** games in the date range passed to
 the function. As of right now it will not scrape playoff games. Date format must

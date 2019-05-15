@@ -63,7 +63,7 @@ def scrape_date_range(date_from, date_to, data_format='pandas', data_dir=f"{os.e
 
     for game in game_ids:
         print(f"Scraping game id: {game}")
-        scraped_games.append(sf.scrape_pbp(game))
+        scraped_games.append(sf.main_scrape(game))
 
     if data_format == 'pandas':
         return pd.concat(scraped_games)
@@ -95,7 +95,7 @@ def scrape_game(game_ids, data_format='pandas', data_dir=f"{os.environ['HOME']}/
     scraped_games = []
     for game in game_ids:
         print(f"Scraping game id: 00{game}")
-        scraped_games.append(sf.scrape_pbp(f"00{game}"))
+        scraped_games.append(sf.main_scrape(f"00{game}"))
 
     nba_df = pd.concat(scraped_games)
 
@@ -131,7 +131,7 @@ def scrape_season(season, data_format='pandas', data_dir=f"{os.environ['HOME']}/
 
     for game in game_ids:
         print(f"Scraping game id: 00{game}")
-        scraped_games.append(sf.scrape_pbp(f"00{game}"))
+        scraped_games.append(sf.main_scrape(f"00{game}"))
 
     nba_df = pd.concat(scraped_games)
 
