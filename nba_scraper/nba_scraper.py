@@ -1,5 +1,5 @@
 import os
-import time
+from datetime import datetime
 import pandas as pd
 import nba_scraper.scrape_functions as sf
 
@@ -30,7 +30,7 @@ def check_valid_dates(from_date, to_date):
     Outputs:
     '''
     try:
-        if time.strptime(to_date, "%Y-%m-%d") < time.strptime(from_date, "%Y-%m-%d"):
+        if datetime.strptime(to_date, "%Y-%m-%d") < datetime.strptime(from_date, "%Y-%m-%d"):
             raise ValueError("Error: The second date input is earlier than the first one")
     except ValueError:
         raise ValueError(

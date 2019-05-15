@@ -5,3 +5,4 @@ dist/
 MANIFEST
 nba_scraper.egg-info/
 .cache/
+.idea/
