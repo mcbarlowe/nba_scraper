@@ -113,7 +113,7 @@ def get_date_games(from_date, to_date):
             if month['mscd']['g']:
                 # Assume games in order so first in list is first game in month
                 cur_month = datetime.datetime.strptime(month['mscd']['g'][0]['gdte'], "%Y-%m-%d")
-            
+
                 # If first game in month doesn't fall in range no need to check each game for rest of month
                 # Convert from_date to beginning of month as that is where cur_month starts
                 if to_date >= cur_month >= (from_date - datetime.timedelta(from_date.day-1)):
@@ -735,15 +735,14 @@ def get_pbp_api(season_string, pbp_season, game_id, season_type):
     # v2 api will contain all the player info for each play in the game while the
     # pbp_api_url will contain xy coords for each event
 
-    #TODO remove verify when merging to master
     try:
-        v2_rep = requests.get(v2_api_url, headers=USER_AGENT, verify=False)
+        v2_rep = requests.get(v2_api_url, headers=USER_AGENT)
     except json.decoder.JSONDecodeError as ex:
         print(ex)
         print(f'This is the stats.nba.com API\'s output: {v2_rep.text}')
         sys.exit()
     try:
-        pbp_rep = requests.get(pbp_api_url, headers=USER_AGENT, verify=False)
+        pbp_rep = requests.get(pbp_api_url, headers=USER_AGENT)
     except json.decoder.JSONDecodeError as ex:
         print(ex)
         print(f'This is the data.nba.com API\'s output: {pbp_rep.text}')
@@ -793,17 +792,16 @@ def get_lineup_api(season_string, away_team_id, home_team_id,
                        f'SeasonSegment=&SeasonType={season_type}'
                        '&ShotClockRange=&TeamID=&VsConference=&VsDivision=')
 
-    #TODO change the verify from false in final release
     try:
         home_lineup_req = requests.get(home_lineup_api,
-                                       headers=USER_AGENT, verify=False)
+                                       headers=USER_AGENT)
     except json.decoder.JSONDecodeError as ex:
         print(ex)
         print(f'This is the home_lineup API\'s output: {home_lineup_req.text}')
         sys.exit()
     try:
         away_lineup_req = requests.get(away_lineup_api,
-                                       headers=USER_AGENT, verify=False)
+                                       headers=USER_AGENT)
     except json.decoder.JSONDecodeError as ex:
         print(ex)
         print(f'This is the away_lineup API\'s output: {away_lineup_req.text}')
