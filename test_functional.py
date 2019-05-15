@@ -24,3 +24,9 @@ def test_scrape_date_range():
     '''
     dataframe = ns.scrape_date_range('2017-10-18', '2017-10-18')
     assert isinstance(dataframe, pd.DataFrame)
+
+def test_scrape_file():
+    '''
+    this test the dataframe to csv function
+    '''
+    ns.scrape_game([21700001], data_format='csv')

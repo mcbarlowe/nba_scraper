@@ -49,3 +49,38 @@ def test_get_season():
     assert sf.get_season(datetime.strptime('2018-09-01', "%Y-%m-%d")) == 2018
     assert sf.get_season(datetime.strptime('2018-04-01', "%Y-%m-%d")) == 2017
     assert sf.get_season(datetime.strptime('2018-01-01', "%Y-%m-%d")) == 2017
+
+def test_made_shot():
+    '''
+    test the made_shot funciton to make sure it is calculating correctly
+    '''
+
+    with open('v2_dict.json', 'r') as v2_file:
+        v2_dict = json.load(v2_file)
+    with open('pbp_dict.json', 'r') as pbp:
+        pbp_dict = json.load(pbp)
+
+    game_df = sf.scrape_pbp(v2_dict, pbp_dict)
+
+    assert sf.made_shot(game_df.iloc[20, :].copy()) == 1
+    assert sf.made_shot(game_df.iloc[13, :].copy()) == 1
+    assert sf.made_shot(game_df.iloc[23, :].copy()) == 0
+    assert sf.made_shot(game_df.iloc[123, :].copy()) == 0
+
+def test_parse_foul():
+    '''
+    test for the parse_foul function
+    '''
+
+    with open('v2_dict.json', 'r') as v2_file:
+        v2_dict = json.load(v2_file)
+    with open('pbp_dict.json', 'r') as pbp:
+        pbp_dict = json.load(pbp)
+
+    game_df = sf.scrape_pbp(v2_dict, pbp_dict)
+    assert sf.parse_foul(game_df.iloc[12, :].copy()) == '3 second'
+    assert sf.parse_foul(game_df.iloc[108, :].copy()) == 'shooting'
+    assert sf.parse_foul(game_df.iloc[125, :].copy()) == 'charge'
+    assert sf.parse_foul(game_df.iloc[131, :].copy()) == 'loose_ball'
+    assert sf.parse_foul(game_df.iloc[155, :].copy()) == 'personal'
+    assert sf.parse_foul(game_df.iloc[256, :].copy()) == 'technical'
