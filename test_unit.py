@@ -84,3 +84,52 @@ def test_parse_foul():
     assert sf.parse_foul(game_df.iloc[131, :].copy()) == 'loose_ball'
     assert sf.parse_foul(game_df.iloc[155, :].copy()) == 'personal'
     assert sf.parse_foul(game_df.iloc[256, :].copy()) == 'technical'
+
+def test_shot_types():
+    '''
+    function to test the parse_shot_types function in scrape_functions
+    '''
+    with open('v2_dict.json', 'r') as v2_file:
+        v2_dict = json.load(v2_file)
+    with open('pbp_dict.json', 'r') as pbp:
+        pbp_dict = json.load(pbp)
+
+    game_df = sf.scrape_pbp(v2_dict, pbp_dict)
+
+    assert sf.parse_shot_types(game_df.iloc[3, :].copy()) == 'layup'
+    assert sf.parse_shot_types(game_df.iloc[7, :].copy()) == 'jump'
+    assert sf.parse_shot_types(game_df.iloc[18, :].copy()) == 'dunk'
+    assert sf.parse_shot_types(game_df.iloc[119, :].copy()) == 'hook'
+    assert sf.parse_shot_types(game_df.iloc[119, :].copy()) == 'hook'
+    assert sf.parse_shot_types(game_df.iloc[121, :].copy()) == 'free'
+
+def test_seconds_elapsed():
+    '''
+    test create_seconds_elapsed function in scrape_functions
+    '''
+    with open('v2_dict.json', 'r') as v2_file:
+        v2_dict = json.load(v2_file)
+    with open('pbp_dict.json', 'r') as pbp:
+        pbp_dict = json.load(pbp)
+
+    game_df = sf.scrape_pbp(v2_dict, pbp_dict)
+
+    assert sf.create_seconds_elapsed(game_df.iloc[8, :].copy()) == 61
+    assert sf.create_seconds_elapsed(game_df.iloc[368, :].copy()) == 2197
+    assert sf.create_seconds_elapsed(game_df.iloc[233, :].copy()) == 1450
+    assert sf.create_seconds_elapsed(game_df.iloc[117, :].copy()) == 735
+
+def test_calc_points():
+    '''
+    test calc_points_made function
+    '''
+    with open('v2_dict.json', 'r') as v2_file:
+        v2_dict = json.load(v2_file)
+    with open('pbp_dict.json', 'r') as pbp:
+        pbp_dict = json.load(pbp)
+
+    game_df = sf.scrape_pbp(v2_dict, pbp_dict)
+    assert sf.calc_points_made(game_df.iloc[110, :].copy()) == 1
+    assert sf.calc_points_made(game_df.iloc[195, :].copy()) == 2
+    assert sf.calc_points_made(game_df.iloc[151, :].copy()) == 3
+
