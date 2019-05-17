@@ -10,9 +10,9 @@ def test_pbp_scrape():
     '''
     test of the main_scrape function using pre downloaded JSON
     '''
-    with open('v2_dict.json', 'r') as v2_file:
+    with open('test_files/v2_dict.json', 'r') as v2_file:
         v2_dict = json.load(v2_file)
-    with open('pbp_dict.json', 'r') as pbp:
+    with open('test_files/pbp_dict.json', 'r') as pbp:
         pbp_dict = json.load(pbp)
 
     game_df = sf.scrape_pbp(v2_dict, pbp_dict)
@@ -24,14 +24,14 @@ def test_lineup_scrape():
     a dataframe of the pbp with the the players on the floor at each event
     '''
 
-    with open('home_dict.json', 'r') as h_dict:
+    with open('test_files/home_dict.json', 'r') as h_dict:
         home_lineups = json.load(h_dict)
-    with open('away_dict.json', 'r') as a_dict:
+    with open('test_files/away_dict.json', 'r') as a_dict:
         away_lineups = json.load(a_dict)
 
-    with open('v2_dict.json', 'r') as v2_file:
+    with open('test_files/v2_dict.json', 'r') as v2_file:
         v2_dict = json.load(v2_file)
-    with open('pbp_dict.json', 'r') as pbp:
+    with open('test_files/pbp_dict.json', 'r') as pbp:
         pbp_dict = json.load(pbp)
 
     game_df = sf.scrape_pbp(v2_dict, pbp_dict)
@@ -55,9 +55,9 @@ def test_made_shot():
     test the made_shot funciton to make sure it is calculating correctly
     '''
 
-    with open('v2_dict.json', 'r') as v2_file:
+    with open('test_files/v2_dict.json', 'r') as v2_file:
         v2_dict = json.load(v2_file)
-    with open('pbp_dict.json', 'r') as pbp:
+    with open('test_files/pbp_dict.json', 'r') as pbp:
         pbp_dict = json.load(pbp)
 
     game_df = sf.scrape_pbp(v2_dict, pbp_dict)
@@ -72,9 +72,9 @@ def test_parse_foul():
     test for the parse_foul function
     '''
 
-    with open('v2_dict.json', 'r') as v2_file:
+    with open('test_files/v2_dict.json', 'r') as v2_file:
         v2_dict = json.load(v2_file)
-    with open('pbp_dict.json', 'r') as pbp:
+    with open('test_files/pbp_dict.json', 'r') as pbp:
         pbp_dict = json.load(pbp)
 
     game_df = sf.scrape_pbp(v2_dict, pbp_dict)
@@ -89,9 +89,9 @@ def test_shot_types():
     '''
     function to test the parse_shot_types function in scrape_functions
     '''
-    with open('v2_dict.json', 'r') as v2_file:
+    with open('test_files/v2_dict.json', 'r') as v2_file:
         v2_dict = json.load(v2_file)
-    with open('pbp_dict.json', 'r') as pbp:
+    with open('test_files/pbp_dict.json', 'r') as pbp:
         pbp_dict = json.load(pbp)
 
     game_df = sf.scrape_pbp(v2_dict, pbp_dict)
@@ -107,9 +107,9 @@ def test_seconds_elapsed():
     '''
     test create_seconds_elapsed function in scrape_functions
     '''
-    with open('v2_dict.json', 'r') as v2_file:
+    with open('test_files/v2_dict.json', 'r') as v2_file:
         v2_dict = json.load(v2_file)
-    with open('pbp_dict.json', 'r') as pbp:
+    with open('test_files/pbp_dict.json', 'r') as pbp:
         pbp_dict = json.load(pbp)
 
     game_df = sf.scrape_pbp(v2_dict, pbp_dict)
@@ -123,9 +123,9 @@ def test_calc_points():
     '''
     test calc_points_made function
     '''
-    with open('v2_dict.json', 'r') as v2_file:
+    with open('test_files/v2_dict.json', 'r') as v2_file:
         v2_dict = json.load(v2_file)
-    with open('pbp_dict.json', 'r') as pbp:
+    with open('test_files/pbp_dict.json', 'r') as pbp:
         pbp_dict = json.load(pbp)
 
     game_df = sf.scrape_pbp(v2_dict, pbp_dict)

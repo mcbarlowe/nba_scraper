@@ -619,7 +619,7 @@ def scrape_pbp(v2_dict, pbp_dict):
 
 
     #create an event team colum
-    clean_df['event_team'] = np.where(clean_df['homedescription'].isnull(),
+    clean_df['event_team'] = np.where(~clean_df['homedescription'].isnull(),
                                       clean_df['home_team_abbrev'],
                                       clean_df['away_team_abbrev'])
 
@@ -631,10 +631,6 @@ def scrape_pbp(v2_dict, pbp_dict):
     clean_df['shot_type_de'] = clean_df[['eventmsgtype', 'eventmsgactiontype']] \
         .apply(lambda x: SHOT_TYPE_DICT[int(x['eventmsgactiontype'])]
                if np.isin(x['eventmsgtype'], [1, 2]) else np.nan, axis=1)
-    #create an event team colum
-    clean_df['event_team'] = np.where(clean_df['homedescription'].isnull(),
-                                      clean_df['home_team_abbrev'],
-                                      clean_df['away_team_abbrev'])
 
     #create column whether shot was succesful or not
     clean_df['shot_made'] = clean_df.apply(made_shot, axis=1)
