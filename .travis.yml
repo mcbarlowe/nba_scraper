@@ -6,8 +6,13 @@ install:
     pip install -r requirements.txt
 
 script:
-    - pytest -s test_unit.py
+    - pytest -s --cov=nba_scraper test_unit.py
 env:
   - MOZ_HEADLESS=1
+  - CODECOV_TOKEN="767a6b3a-c581-4d73-80e9-ee9112328140"
+
+after success:
+    - codecov
+
 addons:
   firefox: latest
