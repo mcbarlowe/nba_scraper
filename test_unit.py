@@ -2,6 +2,7 @@
 unit tests for the nba_scraper module
 '''
 from datetime import datetime
+import pytest
 import json
 import pandas as pd
 import nba_scraper.scrape_functions as sf
@@ -147,4 +148,16 @@ def test_check_format(capfd):
     assert out == (f"You passed pand to scrape_game function as a data format.\n"
                    "This is an unaccepted format. Please either pass 'pandas' or 'csv'.\n\n")
 
+def test_check_valid_dates():
+    '''
+    test for check_valid_dates function in nba_scraper.py
+    '''
+    ns.check_valid_dates('2018-01-01', '2018-01-30')
+    with pytest.raises(ValueError):
+        ns.check_valid_dates('2018-01-30', '2018-01-01')
 
+    with pytest.raises(ValueError):
+        ns.check_valid_dates('01-01-2018', '01-30-2018' )
+
+    with pytest.raises(ValueError):
+        ns.check_valid_dates('30-01-2018', '15-02-2018' )
