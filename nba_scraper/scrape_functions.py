@@ -40,7 +40,8 @@ SHOT_TYPE_DICT = {58: 'turnaround hook shot', 5: 'layup', 6: 'driving layup',
                   101: 'driving floating jump shot', 102: 'driving floating bank shot jump shot',
                   73: 'driving reverse layup', 63: 'fadeaway jump shot', 47: 'turnaround jump shot',
                   52: 'alley oop dunk', 97: 'tip layup', 66: 'jump bank shot',
-                  50: 'running dunk shot', 41: 'running layup', 93: 'driving bank hook shot',
+                  50: 'running dunk shot', 41: 'running layup',
+                  42: 'driving layup', 93: 'driving bank hook shot',
                   87: 'putback dunk shot', 99: 'cutting finger roll layup',
                   86: 'turnaround fadeaway', 78: 'floating jump shot', 9: 'driving dunk',
                   74: 'running reverse layup', 44: 'reverse layup', 71: 'finger roll layup',
@@ -48,7 +49,9 @@ SHOT_TYPE_DICT = {58: 'turnaround hook shot', 5: 'layup', 6: 'driving layup',
                   110: 'running reverse dunk', 107: 'tip dunk', 51: 'reverse dunk',
                   105: 'turnaround fadeaway bank jump shot', 100: 'running alley oop layup',
                   106: 'running alley oop dunk', 104: 'step back bank jump shot',
-                  109: 'driving reverse dunk', 2: '3pt shot'
+                  109: 'driving reverse dunk', 2: '3pt shot', 40: 'layup',
+                  49: 'driving_dunk', 82: 'driving bank shot', 46: 'running jump shot',
+                  55: 'hook shot', 45: 'jump shot', 85: 'turnaround bank shot'
                   }
 
 #this dictionary will categorize the event types that happen in the NBA
@@ -726,6 +729,8 @@ def get_pbp_api(season_string, pbp_season, game_id, season_type):
     pbp_api_url = (f'https://data.nba.com/data/10s/v2015/json/mobile_teams/'
                    f'nba/{pbp_season}/scores/pbp/{game_id}_full_pbp.json')
 
+    print(v2_api_url)
+    print(pbp_api_url)
     # this will be the main url used for the v2 api url once testing is done
     # v2 api will contain all the player info for each play in the game while the
     # pbp_api_url will contain xy coords for each event

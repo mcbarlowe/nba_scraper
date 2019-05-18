@@ -14,7 +14,7 @@ of specific games, and `scrape_season` which scrapes an entire season of regular
 season games.
 
 As of right now the package only scrapes as far back as the 2016 season. Plans
-are in place to be able to scraper older seasons, however these older seasons
+are in place to be able to scrape older seasons, however these older seasons
 won't have x/y locations for all events as the more recent seasons do.
 
 # Installation
