@@ -10,7 +10,7 @@ script:
 env:
   - MOZ_HEADLESS=1
 
-after success:
+after_success:
     - codecov
 
 addons:
