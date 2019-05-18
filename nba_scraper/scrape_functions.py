@@ -130,9 +130,8 @@ def get_date_games(from_date, to_date):
 # because using .iloc it was about 30 times faster than my refactor. Using .iat
 # it seems to be about the same if not a little slower and I'm hoping someday I
 # actually figure out why that is.
+'''
 def get_lineups(dataframe, season_type):
-    '''
-    This function gets the lineups for the game and creates columns
     for each player on the court for each event of the play by play
 
     Inputs:
@@ -141,7 +140,6 @@ def get_lineups(dataframe, season_type):
 
     Outputs:
     lineup_df     - the dataframe with lineups computed
-    '''
 
     periods = []
     for period in range(1, dataframe['period'].max() + 1):
@@ -437,6 +435,7 @@ def get_lineups(dataframe, season_type):
     # concatting all the periods into one dataframe and returning it
     lineup_df = pd.concat(periods).reset_index(drop=True)
     return lineup_df
+'''
 
 
 def made_shot(row):

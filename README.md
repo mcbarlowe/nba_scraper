@@ -7,10 +7,10 @@
 
 # `nba_scraper`
 
-This is a package written in Python to scraper the NBA's api and produced the
+This is a package written in Python to scrape the NBA's api and produce the
 play by play of games either in a `csv` file or a `pandas` dataframe. This package
 has two main functions `scrape_game` which scrapes an individual game or a list
-of specifice games, and `scrape_season` which scrapes an entire season of regular
+of specific games, and `scrape_season` which scrapes an entire season of regular
 season games.
 
 As of right now the package only scrapes as far back as the 2016 season. Plans

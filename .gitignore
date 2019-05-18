@@ -8,3 +8,4 @@ nba_scraper.egg-info/
 .idea/
 Untitled3.ipynb
 .coverage
+get_api_calls.py

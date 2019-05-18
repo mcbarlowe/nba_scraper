@@ -5,6 +5,7 @@ from datetime import datetime
 import json
 import pandas as pd
 import nba_scraper.scrape_functions as sf
+import nba_scraper.nba_scraper as ns
 
 def test_pbp_scrape():
     '''
@@ -133,5 +134,17 @@ def test_calc_points():
     assert sf.calc_points_made(game_df.iloc[195, :].copy()) == 2
     assert sf.calc_points_made(game_df.iloc[151, :].copy()) == 3
 
+def test_check_format(capfd):
+    '''
+    test check_format function
+    '''
+    ns.check_format('pandas')
+    out, err = capfd.readouterr()
+    assert out == ''
+
+    ns.check_format('pand')
+    out, err = capfd.readouterr()
+    assert out == (f"You passed pand to scrape_game function as a data format.\n"
+                   "This is an unaccepted format. Please either pass 'pandas' or 'csv'.\n\n")
 
 
