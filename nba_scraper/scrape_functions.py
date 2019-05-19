@@ -723,10 +723,9 @@ def get_pbp_api(season_string, pbp_season, game_id, season_type):
     pbp_dict         - Dictionary of the JSON response from data.nba.com api
     v2_dict          - Dictionary of the JSON response from the stats.nba.com api
     '''
-    v2_api_url = ('https://stats.nba.com/stats/playbyplayv2?EndPeriod=10'
-                  f'&EndRange=55800&GameID={game_id}&RangeType=2&Season='
-                  f'{season_string}&SeasonType={season_type}&StartPeriod='
-                  '1&StartRange=0kk')
+    v2_api_url = ('https://stats.nba.com/stats/playbyplayv2?'
+                  f'EndPeriod=10&GameID={game_id}&StartPeriod=1')
+
 
     pbp_api_url = (f'https://data.nba.com/data/10s/v2015/json/mobile_teams/'
                    f'nba/{pbp_season}/scores/pbp/{game_id}_full_pbp.json')
