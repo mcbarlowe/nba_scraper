@@ -51,7 +51,9 @@ SHOT_TYPE_DICT = {58: 'turnaround hook shot', 5: 'layup', 6: 'driving layup',
                   106: 'running alley oop dunk', 104: 'step back bank jump shot',
                   109: 'driving reverse dunk', 2: '3pt shot', 40: 'layup',
                   49: 'driving_dunk', 82: 'driving bank shot', 46: 'running jump shot',
-                  55: 'hook shot', 45: 'jump shot', 85: 'turnaround bank shot'
+                  55: 'hook shot', 45: 'jump shot', 85: 'turnaround bank shot',
+                  83: 'fadeaway bank shot', 48: 'dunk'
+
                   }
 
 #this dictionary will categorize the event types that happen in the NBA
@@ -631,7 +633,7 @@ def scrape_pbp(v2_dict, pbp_dict):
 
     #create and shot type description column
     clean_df['shot_type_de'] = clean_df[['eventmsgtype', 'eventmsgactiontype']] \
-        .apply(lambda x: SHOT_TYPE_DICT[int(x['eventmsgactiontype'])]
+        .apply(lambda x: SHOT_TYPE_DICT.get(int(x['eventmsgactiontype']), np.nan)
                if np.isin(x['eventmsgtype'], [1, 2]) else np.nan, axis=1)
 
     #create column whether shot was succesful or not
@@ -729,8 +731,6 @@ def get_pbp_api(season_string, pbp_season, game_id, season_type):
     pbp_api_url = (f'https://data.nba.com/data/10s/v2015/json/mobile_teams/'
                    f'nba/{pbp_season}/scores/pbp/{game_id}_full_pbp.json')
 
-    print(v2_api_url)
-    print(pbp_api_url)
     # this will be the main url used for the v2 api url once testing is done
     # v2 api will contain all the player info for each play in the game while the
     # pbp_api_url will contain xy coords for each event
