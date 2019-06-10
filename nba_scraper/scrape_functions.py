@@ -604,10 +604,17 @@ def scrape_pbp(v2_dict, pbp_dict):
                                left_on='eventnum', right_on='evt')
 
     #add date and team abbrev columns to dataframe
+    print(gcode)
+    print(pbp_dict['g']['gcode'])
     clean_df.loc[:, 'home_team_abbrev'] = gcode[1][3:]
     clean_df.loc[:, 'away_team_abbrev'] = gcode[1][:3]
-    clean_df.loc[:, 'game_date'] = gcode[0]
-    clean_df.loc[:, 'game_date'] = clean_df.loc[:, 'game_date'].astype('datetime64[ns]')
+    #NBA api has the game listed as playing on 20170107 on the link I get my
+    #dates from
+    if str(clean_df['game_id'].unique()[0]) == '0021600559':
+        clean_df.loc[:, 'game_date'] = str(int(gcode[0]) + 1)
+    else:
+        clean_df.loc[:, 'game_date'] = gcode[0]
+    clean_df.loc[:, 'game_date'] = pd.to_datetime(clean_df['game_date'], format='%Y%m%d')
     clean_df.loc[:, ('season')] = np.where(clean_df.game_date.dt.month.isin([10, 11, 12]),
                                            clean_df.game_date.dt.year + 1,
                                            clean_df.game_date.dt.year)
@@ -790,6 +797,7 @@ def get_lineup_api(season_string, away_team_id, home_team_id,
                        f'PlusMinus=N&Rank=N&Season={season_string}&'
                        f'SeasonSegment=&SeasonType={season_type}'
                        '&ShotClockRange=&TeamID=&VsConference=&VsDivision=')
+
 
     try:
         home_lineup_req = requests.get(home_lineup_api,

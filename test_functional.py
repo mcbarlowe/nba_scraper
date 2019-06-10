@@ -29,4 +29,4 @@ def test_scrape_file():
     '''
     this test the dataframe to csv function
     '''
-    ns.scrape_game([21700001], data_format='csv')
+    ns.scrape_game([21600559], data_format='csv')
