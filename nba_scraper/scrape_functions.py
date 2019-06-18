@@ -563,7 +563,7 @@ def calc_points_made(row):
         return 3
     elif row['is_three'] == 0 and row['shot_made'] == 1 and row['shot_type'] != 'free':
         return 2
-    elif row['shot_type'] == 'free':
+    elif row['shot_type'] == 'free' and row['shot_made'] == 1:
         return 1
     else:
         return 0
@@ -604,8 +604,6 @@ def scrape_pbp(v2_dict, pbp_dict):
                                left_on='eventnum', right_on='evt')
 
     #add date and team abbrev columns to dataframe
-    print(gcode)
-    print(pbp_dict['g']['gcode'])
     clean_df.loc[:, 'home_team_abbrev'] = gcode[1][3:]
     clean_df.loc[:, 'away_team_abbrev'] = gcode[1][:3]
     #NBA api has the game listed as playing on 20170107 on the link I get my
