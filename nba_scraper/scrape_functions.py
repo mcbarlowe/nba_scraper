@@ -669,10 +669,8 @@ def scrape_pbp(v2_dict, pbp_dict):
                                          clean_df['event_team'].shift(1)), 1, 0)
 
     clean_df['is_o_rebound'] = np.where((clean_df['event_type_de'] == 'rebound') &
-                                        (clean_df['event_team'] ==
-                                         clean_df['event_team'].shift(1))
-                                        & (clean_df['event_type_de'].shift(1) !=
-                                           'free-throw'), 1, 0)
+                                        (clean_df['event_team'] == clean_df['event_team'].shift(1))
+                                        , 1, 0)
 
     #create columns to determine turnovers and steals
     clean_df['is_turnover'] = np.where(clean_df['de'].str.contains('Turnover'), 1, 0)
@@ -684,32 +682,6 @@ def scrape_pbp(v2_dict, pbp_dict):
     # determine if a shot is a putback off an offensive reboundk
     clean_df['is_putback'] = np.where((clean_df['is_o_rebound'].shift(1) == 1) &
                                       (clean_df['event_length'] <= 3), 1, 0)
-
-    #determine points earned
-    clean_df['points_made'] = clean_df.apply(calc_points_made, axis=1)
-
-    #create columns that determine if rebound is offenseive or deffensive
-    clean_df['is_d_rebound'] = np.where((clean_df['event_type_de'] == 'rebound') &
-                                        (clean_df['event_team'] !=
-                                         clean_df['event_team'].shift(1)), 1, 0)
-
-    clean_df['is_o_rebound'] = np.where((clean_df['event_type_de'] == 'rebound') &
-                                        (clean_df['event_team'] == clean_df['event_team'].shift(1))
-                                        & (clean_df['event_type_de'].shift(1) !=
-                                           'free-throw'), 1, 0)
-
-    #create columns to determine turnovers and steals
-    clean_df['is_turnover'] = np.where(clean_df['de'].str.contains('Turnover'), 1, 0)
-    clean_df['is_steal'] = np.where(clean_df['de'].str.contains('Steal'), 1, 0)
-
-    #parse foul type
-    clean_df['foul_type'] = clean_df.apply(parse_foul, axis=1)
-
-    # determine if a shot is a putback off an offensive reboundk
-    clean_df['is_putback'] = np.where((clean_df['is_o_rebound'].shift(1) == 1) &
-                                      (clean_df['event_length'] <= 3), 1, 0)
-
-    #pull lineups
 
     return clean_df
 
