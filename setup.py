@@ -12,7 +12,7 @@ setup(
   author = 'Matthew Barlowe',
   author_email = 'matt@barloweanalytics.com',
   url = 'https://github.com/mcbarlowe/nba_scraper',
-  download_url = 'https://github.com/mcbarlowe/nba_scraper/archive/v0.2.9.4.tar.gz',
+  download_url = 'https://github.com/mcbarlowe/nba_scraper/archive/v0.2.9.5.tar.gz',
   keywords = ['basketball', 'NBA', 'scraper'],
   install_requires=[
           'requests',
