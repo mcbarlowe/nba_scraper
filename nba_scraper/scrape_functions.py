@@ -628,9 +628,14 @@ def scrape_pbp(v2_dict, pbp_dict):
 
 
     #create an event team colum
-    clean_df['event_team'] = np.where(~clean_df['homedescription'].isnull(),
-                                      clean_df['home_team_abbrev'],
-                                      clean_df['away_team_abbrev'])
+    clean_df['event_team'] = np.where(clean_df['homedescription'].isnull(),
+                                 clean_df['away_team_abbrev'],
+                                 np.where(clean_df['visitordescription'].isnull(),
+                                          clean_df['home_team_abbrev'],
+                                          np.where((clean_df['homedescription'].str.contains('Turnover')) |
+                                                   (clean_df['homedescription'].str.contains('MISS')),
+                                                   clean_df['home_team_abbrev'],
+                                                   clean_df['away_team_abbrev'])))
 
     #create and event type description column
     clean_df['event_type_de'] = \
@@ -664,13 +669,16 @@ def scrape_pbp(v2_dict, pbp_dict):
     clean_df['points_made'] = clean_df.apply(calc_points_made, axis=1)
 
     #create columns that determine if rebound is offenseive or deffensive
-    clean_df['is_d_rebound'] = np.where((clean_df['event_type_de'] == 'rebound') &
-                                        (clean_df['event_team'] !=
-                                         clean_df['event_team'].shift(1)), 1, 0)
-
     clean_df['is_o_rebound'] = np.where((clean_df['event_type_de'] == 'rebound') &
-                                        (clean_df['event_team'] == clean_df['event_team'].shift(1))
-                                        , 1, 0)
+                                   (clean_df['event_team'] == clean_df['event_team'].shift(1)) &
+                                   (~clean_df['player1_id'].isin([clean_df.home_team_id.unique()[0],
+                                                                 clean_df.away_team_id.unique()[0]])),
+                                   1, 0)
+    clean_df['is_d_rebound'] = np.where((clean_df['event_type_de'] == 'rebound') &
+                                   (clean_df['event_team'] != clean_df['event_team'].shift(1)) &
+                                   (~clean_df['player1_id'].isin([clean_df.home_team_id.unique()[0],
+                                                                 clean_df.away_team_id.unique()[0]])),
+                                   1, 0)
 
     #create columns to determine turnovers and steals
     clean_df['is_turnover'] = np.where(clean_df['de'].str.contains('Turnover'), 1, 0)
