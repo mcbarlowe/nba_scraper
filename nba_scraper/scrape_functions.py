@@ -1099,7 +1099,7 @@ def main_scrape(game_id):
     Outputs:
     game_df     - pandas dataframe of the play by play
     '''
-    season_dict = {'1': 'Pre+season', '2': 'Regular+Season',
+    season_dict = {'1': 'Pre+Season', '2': 'Regular+Season',
                    '3': 'All+Star', '4': 'Playoffs'}
     season_type = season_dict[game_id[2]]
     season = 2000 + int(game_id[3:5])
