@@ -16,8 +16,15 @@ import pandas as pd
 import numpy as np
 
 # have to pass this to the requests function or the api will return a 403 code
-USER_AGENT = {'User-agent': 'Mozilla/5.0'}
-
+USER_AGENT = {'Host': 'stats.nba.com',
+            'Connection': 'keep-alive',
+            'Cache-Control': 'max-age=0',
+            'Upgrade-Insecure-Requests': '1',
+            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/66.0.3359.181 Safari/537.36',
+            'Referer': 'stats.nba.com',
+            'Accept-Encoding': 'gzip, deflate, br',
+            'Accept-Language': 'en-US,en;q=0.9',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8'}
 #gameids that are regular season ids start with 002 while preseason starts
 #with 001. the next two digits are the year represented by the first year
 #in the sequence so for the 20172018 season it would be 17 and 20182019 it
@@ -726,7 +733,7 @@ def get_pbp_api(season_string, pbp_season, game_id, season_type):
         print(f'This is the stats.nba.com API\'s output: {v2_rep.text}')
         sys.exit()
     try:
-        pbp_rep = requests.get(pbp_api_url, headers=USER_AGENT)
+        pbp_rep = requests.get(pbp_api_url)
     except json.decoder.JSONDecodeError as ex:
         print(ex)
         print(f'This is the data.nba.com API\'s output: {pbp_rep.text}')
