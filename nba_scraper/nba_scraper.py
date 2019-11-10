@@ -73,7 +73,7 @@ def scrape_date_range(date_from, date_to, data_format='pandas', data_dir=f"{Path
         return None
 
 
-def scrape_game(game_ids, data_format='pandas', data_dir=f"{os.environ['HOME']}/nbadata.csv"):
+def scrape_game(game_ids, data_format='pandas', data_dir=f"{Path.home()}/nbadata.csv}"):
     '''
     function scrapes nba games and returns them in the data format requested
     by the user.
@@ -107,7 +107,7 @@ def scrape_game(game_ids, data_format='pandas', data_dir=f"{os.environ['HOME']}/
         return None
 
 
-def scrape_season(season, data_format='pandas', data_dir=f"{os.environ['HOME']}/"):
+def scrape_season(season, data_format='pandas', data_dir=f"{Path.home()}/nbadata.csv}"):
     '''
     This function scrapes and entire season and either returns it as a pandas
     dataframe or writes it to file as a csv file
