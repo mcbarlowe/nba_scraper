@@ -1,5 +1,6 @@
 import os
 from datetime import datetime
+from pathlib import Path
 import pandas as pd
 import nba_scraper.scrape_functions as sf
 
@@ -37,7 +38,7 @@ def check_valid_dates(from_date, to_date):
             "Error: Incorrect format given for dates. They must be given like 'yyyy-mm-dd' (ex: '2016-10-01').")
 
 
-def scrape_date_range(date_from, date_to, data_format='pandas', data_dir=f"{os.environ['HOME']}/nbadata.csv"):
+def scrape_date_range(date_from, date_to, data_format='pandas', data_dir=f"{Path.home()}/nbadata.csv"):
     '''
     Function scrapes all `regular-season` nba games between two dates
 

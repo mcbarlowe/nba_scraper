@@ -117,7 +117,7 @@ def get_date_games(from_date, to_date):
     for season in range(get_season(from_date), get_season(to_date) + 1):
         url = ("http://data.nba.com/data/10s/v2015/json/mobile_teams"
                f"/nba/{season}/league/00_full_schedule.json")
-        schedule = requests.get(url, headers=USER_AGENT).json()
+        schedule = requests.get(url).json()
         time.sleep(1)
 
 
