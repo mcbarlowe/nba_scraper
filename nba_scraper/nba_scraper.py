@@ -1,27 +1,29 @@
-import os
 from datetime import datetime
 from pathlib import Path
 import pandas as pd
+#TODO fix import for get_game_date which is now stored in helper_functions.py
 import nba_scraper.scrape_functions as sf
 
 
 def check_format(data_format):
-    '''
+    """
     Check that the format for the data is either csv or pandas
 
     Inputs:
     data_format - String of format
 
     Outputs:
-    '''
-    possible_formats = ['pandas', 'csv']
+    """
+    possible_formats = ["pandas", "csv"]
     if data_format.lower() not in possible_formats:
-        print(f"You passed {data_format} to scrape_game function as a data format.\n"
-              "This is an unaccepted format. Please either pass 'pandas' or 'csv'.\n")
+        print(
+            f"You passed {data_format} to scrape_game function as a data format.\n"
+            "This is an unaccepted format. Please either pass 'pandas' or 'csv'.\n"
+        )
 
 
 def check_valid_dates(from_date, to_date):
-    '''
+    """
     Check if it's a valid date range. If not raise ValueError
 
     Inputs:
@@ -29,17 +31,24 @@ def check_valid_dates(from_date, to_date):
     date_to     - Date to scrape to
 
     Outputs:
-    '''
+    """
     try:
-        if datetime.strptime(to_date, "%Y-%m-%d") < datetime.strptime(from_date, "%Y-%m-%d"):
-            raise ValueError("Error: The second date input is earlier than the first one")
+        if datetime.strptime(to_date, "%Y-%m-%d") < datetime.strptime(
+            from_date, "%Y-%m-%d"
+        ):
+            raise ValueError(
+                "Error: The second date input is earlier than the first one"
+            )
     except ValueError:
         raise ValueError(
-            "Error: Incorrect format given for dates. They must be given like 'yyyy-mm-dd' (ex: '2016-10-01').")
+            "Error: Incorrect format given for dates. They must be given like 'yyyy-mm-dd' (ex: '2016-10-01')."
+        )
 
 
-def scrape_date_range(date_from, date_to, data_format='pandas', data_dir=f"{Path.home()}/nbadata.csv"):
-    '''
+def scrape_date_range(
+    date_from, date_to, data_format="pandas", data_dir=f"{Path.home()}/nbadata.csv"
+):
+    """
     Function scrapes all `regular-season` nba games between two dates
 
     Inputs:
@@ -55,7 +64,7 @@ def scrape_date_range(date_from, date_to, data_format='pandas', data_dir=f"{Path
     nba_df     - If pandas is chosen then this function will
                  return this pandas dataframe object. If csv then
                  a csv file will be written but None will be returned
-    '''
+    """
     check_format(data_format)
     check_valid_dates(date_from, date_to)
 
@@ -66,15 +75,15 @@ def scrape_date_range(date_from, date_to, data_format='pandas', data_dir=f"{Path
         print(f"Scraping game id: {game}")
         scraped_games.append(sf.main_scrape(game))
 
-    if data_format == 'pandas':
+    if data_format == "pandas":
         return pd.concat(scraped_games)
     else:
         pd.concat(scraped_games).to_csv(data_dir, index=False)
         return None
 
 
-def scrape_game(game_ids, data_format='pandas', data_dir=f"{Path.home()}/nbadata.csv"):
-    '''
+def scrape_game(game_ids, data_format="pandas", data_dir=f"{Path.home()}/nbadata.csv"):
+    """
     function scrapes nba games and returns them in the data format requested
     by the user.
 
@@ -90,7 +99,7 @@ def scrape_game(game_ids, data_format='pandas', data_dir=f"{Path.home()}/nbadata
     nba_df     - If pandas is chosen then this function will
                  return this pandas dataframe object. If csv then
                  a csv file will be written but None will be returned
-    '''
+    """
     check_format(data_format)
 
     scraped_games = []
@@ -100,15 +109,15 @@ def scrape_game(game_ids, data_format='pandas', data_dir=f"{Path.home()}/nbadata
 
     nba_df = pd.concat(scraped_games)
 
-    if data_format == 'pandas':
+    if data_format == "pandas":
         return nba_df
     else:
         nba_df.to_csv(data_dir, index=False)
         return None
 
 
-def scrape_season(season, data_format='pandas', data_dir=f"{Path.home()}/nbadata.csv"):
-    '''
+def scrape_season(season, data_format="pandas", data_dir=f"{Path.home()}/nbadata.csv"):
+    """
     This function scrapes and entire season and either returns it as a pandas
     dataframe or writes it to file as a csv file
 
@@ -124,7 +133,7 @@ def scrape_season(season, data_format='pandas', data_dir=f"{Path.home()}/nbadata
     nba_df     - If pandas is chosen then this function will
                  return this pandas dataframe object. If csv then
                  a csv file will be written but None will be returned
-    '''
+    """
     check_format(data_format)
 
     scraped_games = []
@@ -136,7 +145,7 @@ def scrape_season(season, data_format='pandas', data_dir=f"{Path.home()}/nbadata
 
     nba_df = pd.concat(scraped_games)
 
-    if data_format == 'pandas':
+    if data_format == "pandas":
         return nba_df
     else:
         print
@@ -148,5 +157,5 @@ def main():
     return None
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
