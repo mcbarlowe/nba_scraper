@@ -336,7 +336,6 @@ def get_lineup_api(game_id, period):
         f"startPeriod={period}&endPeriod={period}&startRange={start_range}&"
         f"endRange={end_range}&rangeType=2"
     )
-    print(url)
 
     lineups_req = requests.get(url, headers=USER_AGENT)
     lineup_req_dict = json.loads(lineups_req.text)
@@ -370,9 +369,6 @@ def get_lineup(period_df, lineups, dataframe):
     home_team = period_df["home_team_id"].unique()[0]
     away_team = period_df["away_team_id"].unique()[0]
     players = lineups["resultSets"][0]["rowSet"]
-    print(home_team)
-    print(away_team)
-    print(players)
     home_ids_names = [(p[4], p[5]) for p in players if p[1] == home_team]
     away_ids_names = [(p[4], p[5]) for p in players if p[1] == away_team]
 
@@ -508,10 +504,7 @@ def get_lineup(period_df, lineups, dataframe):
                     if len(starting_lineup) == 5:
                         break
             away_ids_names = [(p[0], p[1]) for p in away_ids_names if p[0] not in subs]
-    print(period_df.period.unique()[0])
-    print(home_ids_names)
-    print(away_ids_names)
-    print(period_df.shape)
+
     # creating columns to populate with players on the court
     period_df.loc[:, "home_player_1"] = ""
     period_df.loc[:, "home_player_1_id"] = ""
@@ -548,7 +541,6 @@ def get_lineup(period_df, lineups, dataframe):
                 if ids[0] != period_df.iloc[i, :]["player1_id"]
             ]
             home_ids_names.append((period_df.iloc[i, 20], period_df.iloc[i, 21]))
-            print(home_ids_names)
             period_df.iat[i, 63] = home_ids_names[0][0]
             period_df.iat[i, 62] = home_ids_names[0][1]
             period_df.iat[i, 65] = home_ids_names[1][0]
@@ -579,7 +571,6 @@ def get_lineup(period_df, lineups, dataframe):
                 if ids[0] != period_df.iloc[i, :]["player1_id"]
             ]
             away_ids_names.append((period_df.iloc[i, 20], period_df.iloc[i, 21]))
-            print(away_ids_names)
             period_df.iat[i, 63] = home_ids_names[0][0]
             period_df.iat[i, 62] = home_ids_names[0][1]
             period_df.iat[i, 65] = home_ids_names[1][0]
