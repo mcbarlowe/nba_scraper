@@ -461,7 +461,14 @@ def get_lineup(period_df, lineups, dataframe):
                 home_ids_names = [
                     (p[0], p[1]) for p in home_ids_names if p[0] not in subs
                 ]
-
+            if len(home_ids_names) != 5 and len(starting_lineup) == 5:
+                home_ids_names = [
+                    (
+                        period_df[period_df.player1_id == x].player1_id.unique()[0],
+                        period_df[period_df.player1_id == x].player1_name.unique()[0],
+                    )
+                    for x in starting_lineup
+                ]
     if len(away_ids_names) != 5:
         try:
             away_starting_line = list(
@@ -533,6 +540,14 @@ def get_lineup(period_df, lineups, dataframe):
             else:
                 away_ids_names = [
                     (p[0], p[1]) for p in away_ids_names if p[0] not in subs
+                ]
+            if len(away_ids_names) != 5 and len(starting_lineup) == 5:
+                away_ids_names = [
+                    (
+                        period_df[period_df.player1_id == x].player1_id.unique()[0],
+                        period_df[period_df.player1_id == x].player1_name.unique()[0],
+                    )
+                    for x in starting_lineup
                 ]
 
     # creating columns to populate with players on the court
