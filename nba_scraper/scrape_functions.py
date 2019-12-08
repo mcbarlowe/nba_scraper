@@ -16,7 +16,7 @@ import pandas as pd
 import numpy as np
 
 # TODO probably need to fix these to import modularly correctly
-from nba_scraper.helper_functions import SHOT_TYPE_DICT, EVENT_TYPE_DICT, get_season
+from nba_scraper.helper_functions import EVENT_TYPE_DICT, get_season
 from nba_scraper.stat_calc_functions import (
     made_shot,
     parse_foul,
@@ -38,15 +38,6 @@ USER_AGENT = {
     "Accept-Language": "en-US,en;q=0.9",
     "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8",
 }
-# gameids that are regular season ids start with 002 while preseason starts
-# with 001. the next two digits are the year represented by the first year
-# in the sequence so for the 20172018 season it would be 17 and 20182019 it
-# would be 18 etc. 004 represents the playoffs
-# schedule_api = ('http://data.nba.com/data/10s/v2015/json/'
-#                f'mobile_teams/nba/{season}/league/00_full_schedule.json')
-
-# this api goes back to 20152016 season maybe use this one
-# sched_api = 'http://data.nba.net/data/10s/prod/v1/{season}/schedule.json'
 
 
 def get_date_games(from_date, to_date):
@@ -97,14 +88,13 @@ def get_date_games(from_date, to_date):
     return game_ids
 
 
-def scrape_pbp(v2_dict, pbp_dict):
+def scrape_pbp(v2_dict):
     """
     This function scrapes both of the pbp urls and returns a joined/cleaned
     pbp dataframe
 
     Inputs:
     v2_dict     - stats.nba.com api response
-    pbp_dict    - data.nba.com api response
 
     Outputs:
     clean_df - final cleaned dataframe
@@ -117,45 +107,41 @@ def scrape_pbp(v2_dict, pbp_dict):
     pbp_v2_df.columns = list(map(str.lower, pbp_v2_df.columns))
 
     # converting data.nba.com json to dataframe
-    pbp_df_list = []
-    for qtr in range(len(pbp_dict["g"]["pd"])):
-        pbp_df_list.append(pd.DataFrame(pbp_dict["g"]["pd"][qtr]["pla"]))
-    pbp_df = pd.concat(pbp_df_list)
+    # pbp_df_list = []
+    # for qtr in range(len(pbp_dict["g"]["pd"])):
+    #    pbp_df_list.append(pd.DataFrame(pbp_dict["g"]["pd"][qtr]["pla"]))
+    # pbp_df = pd.concat(pbp_df_list)
 
     # pulling the home and away team abbreviations and the game date
-    gcode = pbp_dict["g"]["gcode"].split("/")
 
-    # TODO find some way of getting date from stats.nba.com instead of
-    # TODO data.nba.com so that way can extend to past seasons
-
-    # joining the two dataframes together and only pulling in relavent columns
-    clean_df = pbp_v2_df.merge(
-        pbp_df[["evt", "locX", "locY", "hs", "vs", "de"]],
-        left_on="eventnum",
-        right_on="evt",
-    )
-
-    # add date and team abbrev columns to dataframe
-    clean_df.loc[:, "home_team_abbrev"] = gcode[1][3:]
-    clean_df.loc[:, "away_team_abbrev"] = gcode[1][:3]
-    # NBA api has the game listed as playing on 20170107 on the link I get my
-    # dates from
-    if str(clean_df["game_id"].unique()[0]) == "0021600559":
-        clean_df.loc[:, "game_date"] = str(int(gcode[0]) + 1)
+    if (
+        pd.isnull(
+            pbp_v2_df[pbp_v2_df["eventmsgtype"] == 10][["homedescription"]].values[0]
+        )
+        == 1
+    ):
+        home_team_abbrev = pbp_v2_df[pbp_v2_df["eventmsgtype"] == 10][
+            "player2_team_abbreviation"
+        ].iloc[0]
+        away_team_abbrev = pbp_v2_df[pbp_v2_df["eventmsgtype"] == 10][
+            "player1_team_abbreviation"
+        ].iloc[0]
     else:
-        clean_df.loc[:, "game_date"] = gcode[0]
-    clean_df.loc[:, "game_date"] = pd.to_datetime(
-        clean_df["game_date"], format="%Y%m%d"
-    )
-    clean_df.loc[:, ("season")] = np.where(
-        clean_df.game_date.dt.month.isin([10, 11, 12]),
-        clean_df.game_date.dt.year + 1,
-        clean_df.game_date.dt.year,
-    )
+        home_team_abbrev = pbp_v2_df[pbp_v2_df["eventmsgtype"] == 10][
+            "player1_team_abbreviation"
+        ].iloc[0]
+        away_team_abbrev = pbp_v2_df[pbp_v2_df["eventmsgtype"] == 10][
+            "player2_team_abbreviation"
+        ].iloc[0]
+
+    pbp_v2_df["home_team_abbrev"] = home_team_abbrev
+    pbp_v2_df["away_team_abbrev"] = away_team_abbrev
+
+    clean_df = pbp_v2_df
 
     # code to properly get the team ids as the scientific notation cuts off some digits
     clean_df.loc[:, "home_team_id"] = (
-        clean_df[clean_df["player1_team_abbreviation"] == gcode[1][3:]][
+        clean_df[clean_df["player1_team_abbreviation"] == home_team_abbrev][
             "player1_team_id"
         ]
         .astype(int)
@@ -163,13 +149,40 @@ def scrape_pbp(v2_dict, pbp_dict):
     )
 
     clean_df.loc[:, "away_team_id"] = (
-        clean_df[clean_df["player1_team_abbreviation"] == gcode[1][:3]][
+        clean_df[clean_df["player1_team_abbreviation"] == away_team_abbrev][
             "player1_team_id"
         ]
         .astype(int)
         .unique()
     )
 
+    # TODO get date
+    season_dict = {
+        "1": "Pre+Season",
+        "2": "Regular+Season",
+        "3": "All+Star",
+        "4": "Playoffs",
+    }
+    season_type = season_dict[clean_df["game_id"].unique()[0][2:3]]
+    if clean_df['game_id'].unique()[0][3:5] == '99':
+        season = '1999-00'
+    else:
+        season = f"20{clean_df['game_id'].unique()[0][3:5]}-{int(clean_df['game_id'].unique()[0][3:5]) + 1}"
+    date_url = (
+        f"https://stats.nba.com/stats/teamgamelog?DateFrom=&DateTo=&LeagueID=&"
+        f"Season={season}"
+        f"&SeasonType={season_type}&TeamID={clean_df['home_team_id'].unique()[0]}"
+    )
+    print(date_url)
+    dates = requests.get(date_url, headers=USER_AGENT)
+    dates_dict = json.loads(dates.text)
+    schedule = dates_dict["resultSets"][0]["rowSet"]
+    game_date = [g[2] for g in schedule if g[1] == clean_df["game_id"].unique()[0]]
+    formatted_date = datetime.datetime.strptime(game_date[0], "%b %d, %Y")
+    clean_df["game_date"] = formatted_date
+    clean_df.loc[:, ("season")] = f"20{int(clean_df['game_id'].unique()[0][3:5])+1}"
+
+    # TODO columns to pull out [['evt', 'locX', 'locY', 'hs', 'vs', 'de']]
     # create an event team colum
     clean_df["event_team"] = np.where(
         clean_df["homedescription"].isnull(),
@@ -192,13 +205,7 @@ def scrape_pbp(v2_dict, pbp_dict):
     )
 
     # create and shot type description column
-    clean_df["shot_type_de"] = clean_df[["eventmsgtype", "eventmsgactiontype"]].apply(
-        lambda x: SHOT_TYPE_DICT.get(int(x["eventmsgactiontype"]), np.nan)
-        if np.isin(x["eventmsgtype"], [1, 2])
-        else np.nan,
-        axis=1,
-    )
-
+    clean_df["shot_type_de"] = ""
     # create column whether shot was succesful or not
     clean_df["shot_made"] = clean_df.apply(made_shot, axis=1)
 
@@ -221,7 +228,12 @@ def scrape_pbp(v2_dict, pbp_dict):
     ].shift(1)
 
     # determine whether shot was a three pointer
-    clean_df["is_three"] = np.where(clean_df["de"].str.contains("3pt"), 1, 0)
+    clean_df["is_three"] = np.where(
+        (clean_df["homedescription"].str.contains("3PT")).fillna(False)
+        | (clean_df["visitordescription"].str.contains("3PT")).fillna(False),
+        1,
+        0,
+    )
 
     # determine points earned
     clean_df["points_made"] = clean_df.apply(calc_points_made, axis=1)
@@ -251,8 +263,18 @@ def scrape_pbp(v2_dict, pbp_dict):
     )
 
     # create columns to determine turnovers and steals
-    clean_df["is_turnover"] = np.where(clean_df["de"].str.contains("Turnover"), 1, 0)
-    clean_df["is_steal"] = np.where(clean_df["de"].str.contains("Steal"), 1, 0)
+    clean_df["is_turnover"] = np.where(
+        (clean_df["homedescription"].str.contains("Turnover")).fillna(False)
+        | (clean_df["visitordescription"].str.contains("Turnover")).fillna(False),
+        1,
+        0,
+    )
+    clean_df["is_steal"] = np.where(
+        (clean_df["homedescription"].str.contains("STEAL")).fillna(False)
+        | (clean_df["visitordescription"].str.contains("STEAL")).fillna(False),
+        1,
+        0,
+    )
 
     # determine what type of fouls are being commited
     clean_df["foul_type"] = clean_df.apply(parse_foul, axis=1)
@@ -265,13 +287,12 @@ def scrape_pbp(v2_dict, pbp_dict):
     return clean_df
 
 
-def get_pbp_api(pbp_season, game_id):
+def get_pbp_api(game_id):
     """
     function gets both JSON requests from the two different APIs if both
     are available and only the stats.nba.com api if not.
 
     Inputs:
-    pbp_season       - String representing season for the data.nba.com api
     game_id          - String representing game id
 
     Outputs:
@@ -280,13 +301,9 @@ def get_pbp_api(pbp_season, game_id):
     """
     v2_api_url = (
         "https://stats.nba.com/stats/playbyplayv2?"
-        f"EndPeriod=10&GameID={game_id}&StartPeriod=1"
+        f"EndPeriod=14&GameID={game_id}&StartPeriod=1"
     )
-
-    pbp_api_url = (
-        f"https://data.nba.com/data/10s/v2015/json/mobile_teams/"
-        f"nba/{pbp_season}/scores/pbp/{game_id}_full_pbp.json"
-    )
+    print(v2_api_url)
 
     # this will be the main url used for the v2 api url once testing is done
     # v2 api will contain all the player info for each play in the game while the
@@ -298,17 +315,10 @@ def get_pbp_api(pbp_season, game_id):
         print(ex)
         print(f"This is the stats.nba.com API's output: {v2_rep.text}")
         sys.exit()
-    try:
-        pbp_rep = requests.get(pbp_api_url)
-    except json.decoder.JSONDecodeError as ex:
-        print(ex)
-        print(f"This is the data.nba.com API's output: {pbp_rep.text}")
-        sys.exit()
 
     v2_dict = v2_rep.json()
-    pbp_dict = pbp_rep.json()
 
-    return v2_dict, pbp_dict
+    return v2_dict
 
 
 def get_lineup_api(game_id, period):
@@ -506,6 +516,7 @@ def get_lineup(period_df, lineups, dataframe):
             away_ids_names = [(p[0], p[1]) for p in away_ids_names if p[0] not in subs]
 
     # creating columns to populate with players on the court
+    print(period_df.shape)
     period_df.loc[:, "home_player_1"] = ""
     period_df.loc[:, "home_player_1_id"] = ""
     period_df.loc[:, "home_player_2"] = ""
@@ -530,6 +541,7 @@ def get_lineup(period_df, lineups, dataframe):
     # players in for each row using the starting lineup list. If there is a
     # substitution event then the player coming on replaces the player going off in
     # the list this is done for the whole period
+    print(period_df.columns)
     for i in range(period_df.shape[0]):
         if (
             period_df.iloc[i, :]["event_type_de"] == "substitution"
@@ -541,26 +553,26 @@ def get_lineup(period_df, lineups, dataframe):
                 if ids[0] != period_df.iloc[i, :]["player1_id"]
             ]
             home_ids_names.append((period_df.iloc[i, 20], period_df.iloc[i, 21]))
-            period_df.iat[i, 63] = home_ids_names[0][0]
-            period_df.iat[i, 62] = home_ids_names[0][1]
-            period_df.iat[i, 65] = home_ids_names[1][0]
-            period_df.iat[i, 64] = home_ids_names[1][1]
-            period_df.iat[i, 67] = home_ids_names[2][0]
-            period_df.iat[i, 66] = home_ids_names[2][1]
-            period_df.iat[i, 69] = home_ids_names[3][0]
-            period_df.iat[i, 68] = home_ids_names[3][1]
-            period_df.iat[i, 71] = home_ids_names[4][0]
-            period_df.iat[i, 70] = home_ids_names[4][1]
-            period_df.iat[i, 73] = away_ids_names[0][0]
-            period_df.iat[i, 72] = away_ids_names[0][1]
-            period_df.iat[i, 75] = away_ids_names[1][0]
-            period_df.iat[i, 74] = away_ids_names[1][1]
-            period_df.iat[i, 77] = away_ids_names[2][0]
-            period_df.iat[i, 76] = away_ids_names[2][1]
-            period_df.iat[i, 79] = away_ids_names[3][0]
-            period_df.iat[i, 78] = away_ids_names[3][1]
-            period_df.iat[i, 81] = away_ids_names[4][0]
-            period_df.iat[i, 80] = away_ids_names[4][1]
+            period_df.iat[i, 57] = home_ids_names[0][0]
+            period_df.iat[i, 56] = home_ids_names[0][1]
+            period_df.iat[i, 59] = home_ids_names[1][0]
+            period_df.iat[i, 58] = home_ids_names[1][1]
+            period_df.iat[i, 61] = home_ids_names[2][0]
+            period_df.iat[i, 60] = home_ids_names[2][1]
+            period_df.iat[i, 63] = home_ids_names[3][0]
+            period_df.iat[i, 62] = home_ids_names[3][1]
+            period_df.iat[i, 65] = home_ids_names[4][0]
+            period_df.iat[i, 64] = home_ids_names[4][1]
+            period_df.iat[i, 67] = away_ids_names[0][0]
+            period_df.iat[i, 66] = away_ids_names[0][1]
+            period_df.iat[i, 69] = away_ids_names[1][0]
+            period_df.iat[i, 68] = away_ids_names[1][1]
+            period_df.iat[i, 71] = away_ids_names[2][0]
+            period_df.iat[i, 70] = away_ids_names[2][1]
+            period_df.iat[i, 73] = away_ids_names[3][0]
+            period_df.iat[i, 72] = away_ids_names[3][1]
+            period_df.iat[i, 75] = away_ids_names[4][0]
+            period_df.iat[i, 74] = away_ids_names[4][1]
         elif (
             period_df.iloc[i, :]["event_type_de"] == "substitution"
             and pd.isnull(period_df.iloc[i, :]["homedescription"]) == 1
@@ -571,47 +583,47 @@ def get_lineup(period_df, lineups, dataframe):
                 if ids[0] != period_df.iloc[i, :]["player1_id"]
             ]
             away_ids_names.append((period_df.iloc[i, 20], period_df.iloc[i, 21]))
-            period_df.iat[i, 63] = home_ids_names[0][0]
-            period_df.iat[i, 62] = home_ids_names[0][1]
-            period_df.iat[i, 65] = home_ids_names[1][0]
-            period_df.iat[i, 64] = home_ids_names[1][1]
-            period_df.iat[i, 67] = home_ids_names[2][0]
-            period_df.iat[i, 66] = home_ids_names[2][1]
-            period_df.iat[i, 69] = home_ids_names[3][0]
-            period_df.iat[i, 68] = home_ids_names[3][1]
-            period_df.iat[i, 71] = home_ids_names[4][0]
-            period_df.iat[i, 70] = home_ids_names[4][1]
-            period_df.iat[i, 73] = away_ids_names[0][0]
-            period_df.iat[i, 72] = away_ids_names[0][1]
-            period_df.iat[i, 75] = away_ids_names[1][0]
-            period_df.iat[i, 74] = away_ids_names[1][1]
-            period_df.iat[i, 77] = away_ids_names[2][0]
-            period_df.iat[i, 76] = away_ids_names[2][1]
-            period_df.iat[i, 79] = away_ids_names[3][0]
-            period_df.iat[i, 78] = away_ids_names[3][1]
-            period_df.iat[i, 81] = away_ids_names[4][0]
-            period_df.iat[i, 80] = away_ids_names[4][1]
+            period_df.iat[i, 57] = home_ids_names[0][0]
+            period_df.iat[i, 56] = home_ids_names[0][1]
+            period_df.iat[i, 59] = home_ids_names[1][0]
+            period_df.iat[i, 58] = home_ids_names[1][1]
+            period_df.iat[i, 61] = home_ids_names[2][0]
+            period_df.iat[i, 60] = home_ids_names[2][1]
+            period_df.iat[i, 63] = home_ids_names[3][0]
+            period_df.iat[i, 62] = home_ids_names[3][1]
+            period_df.iat[i, 65] = home_ids_names[4][0]
+            period_df.iat[i, 64] = home_ids_names[4][1]
+            period_df.iat[i, 67] = away_ids_names[0][0]
+            period_df.iat[i, 66] = away_ids_names[0][1]
+            period_df.iat[i, 69] = away_ids_names[1][0]
+            period_df.iat[i, 68] = away_ids_names[1][1]
+            period_df.iat[i, 71] = away_ids_names[2][0]
+            period_df.iat[i, 70] = away_ids_names[2][1]
+            period_df.iat[i, 73] = away_ids_names[3][0]
+            period_df.iat[i, 72] = away_ids_names[3][1]
+            period_df.iat[i, 75] = away_ids_names[4][0]
+            period_df.iat[i, 74] = away_ids_names[4][1]
         else:
-            period_df.iat[i, 63] = home_ids_names[0][0]
-            period_df.iat[i, 62] = home_ids_names[0][1]
-            period_df.iat[i, 65] = home_ids_names[1][0]
-            period_df.iat[i, 64] = home_ids_names[1][1]
-            period_df.iat[i, 67] = home_ids_names[2][0]
-            period_df.iat[i, 66] = home_ids_names[2][1]
-            period_df.iat[i, 69] = home_ids_names[3][0]
-            period_df.iat[i, 68] = home_ids_names[3][1]
-            period_df.iat[i, 71] = home_ids_names[4][0]
-            period_df.iat[i, 70] = home_ids_names[4][1]
-            period_df.iat[i, 73] = away_ids_names[0][0]
-            period_df.iat[i, 72] = away_ids_names[0][1]
-            period_df.iat[i, 75] = away_ids_names[1][0]
-            period_df.iat[i, 74] = away_ids_names[1][1]
-            period_df.iat[i, 77] = away_ids_names[2][0]
-            period_df.iat[i, 76] = away_ids_names[2][1]
-            period_df.iat[i, 79] = away_ids_names[3][0]
-            period_df.iat[i, 78] = away_ids_names[3][1]
-            period_df.iat[i, 81] = away_ids_names[4][0]
-            period_df.iat[i, 80] = away_ids_names[4][1]
+            period_df.iat[i, 57] = home_ids_names[0][0]
+            period_df.iat[i, 56] = home_ids_names[0][1]
+            period_df.iat[i, 59] = home_ids_names[1][0]
+            period_df.iat[i, 58] = home_ids_names[1][1]
+            period_df.iat[i, 61] = home_ids_names[2][0]
+            period_df.iat[i, 60] = home_ids_names[2][1]
+            period_df.iat[i, 63] = home_ids_names[3][0]
+            period_df.iat[i, 62] = home_ids_names[3][1]
+            period_df.iat[i, 65] = home_ids_names[4][0]
+            period_df.iat[i, 64] = home_ids_names[4][1]
+            period_df.iat[i, 67] = away_ids_names[0][0]
+            period_df.iat[i, 66] = away_ids_names[0][1]
+            period_df.iat[i, 69] = away_ids_names[1][0]
+            period_df.iat[i, 68] = away_ids_names[1][1]
+            period_df.iat[i, 71] = away_ids_names[2][0]
+            period_df.iat[i, 70] = away_ids_names[2][1]
+            period_df.iat[i, 73] = away_ids_names[3][0]
+            period_df.iat[i, 72] = away_ids_names[3][1]
+            period_df.iat[i, 75] = away_ids_names[4][0]
+            period_df.iat[i, 74] = away_ids_names[4][1]
 
     return period_df
 
@@ -629,9 +641,8 @@ def main_scrape(game_id):
     game_df     - pandas dataframe of the play by play
     """
 
-    season = 2000 + int(game_id[3:5])
-    v2_dict, pbp_dict = get_pbp_api(str(season), game_id)
-    game_df = scrape_pbp(v2_dict, pbp_dict)
+    v2_dict = get_pbp_api(game_id)
+    game_df = scrape_pbp(v2_dict)
     periods = []
     for period in range(1, game_df["period"].max() + 1):
         lineups = get_lineup_api(game_id, period)

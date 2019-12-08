@@ -9,7 +9,7 @@ def test_scrape_return():
     """
     this test the scrape_game function for regular season game
     """
-    dataframe = ns.scrape_game([21900010])
+    dataframe = ns.scrape_game([21000010])
     assert isinstance(dataframe, pd.DataFrame)
 
 
@@ -33,4 +33,4 @@ def test_scrape_file():
     """
     this test the dataframe to csv function
     """
-    ns.scrape_game([21600559], data_format="csv")
+    ns.scrape_game([29900807], data_format="csv")

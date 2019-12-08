@@ -9,9 +9,8 @@ def test_pbp_request():
     this test checks to make sure the API is returning a proper JSON string
     that can be converted into a python dictionary
     """
-    v2_dict, pbp_dict = sf.get_pbp_api("201718", "2017", "0021700001", "Regular+Season")
+    v2_dict = sf.get_pbp_api("0021700001")
     assert isinstance(v2_dict, dict)
-    assert isinstance(pbp_dict, dict)
 
 
 def test_lineup_request():
