@@ -173,7 +173,6 @@ def scrape_pbp(v2_dict):
         f"Season={season}"
         f"&SeasonType={season_type}&TeamID={clean_df['home_team_id'].unique()[0]}"
     )
-    print(date_url)
     dates = requests.get(date_url, headers=USER_AGENT)
     dates_dict = json.loads(dates.text)
     schedule = dates_dict["resultSets"][0]["rowSet"]
@@ -303,7 +302,6 @@ def get_pbp_api(game_id):
         "https://stats.nba.com/stats/playbyplayv2?"
         f"EndPeriod=14&GameID={game_id}&StartPeriod=1"
     )
-    print(v2_api_url)
 
     # this will be the main url used for the v2 api url once testing is done
     # v2 api will contain all the player info for each play in the game while the
@@ -516,7 +514,6 @@ def get_lineup(period_df, lineups, dataframe):
             away_ids_names = [(p[0], p[1]) for p in away_ids_names if p[0] not in subs]
 
     # creating columns to populate with players on the court
-    print(period_df.shape)
     period_df.loc[:, "home_player_1"] = ""
     period_df.loc[:, "home_player_1_id"] = ""
     period_df.loc[:, "home_player_2"] = ""
@@ -541,7 +538,6 @@ def get_lineup(period_df, lineups, dataframe):
     # players in for each row using the starting lineup list. If there is a
     # substitution event then the player coming on replaces the player going off in
     # the list this is done for the whole period
-    print(period_df.columns)
     for i in range(period_df.shape[0]):
         if (
             period_df.iloc[i, :]["event_type_de"] == "substitution"

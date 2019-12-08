@@ -60,7 +60,6 @@ def test_made_shot():
 
     game_df = sf.scrape_pbp(v2_dict)
 
-    print(game_df.iloc[123, :])
     assert sf.made_shot(game_df.iloc[20, :].copy()) == 1
     assert sf.made_shot(game_df.iloc[13, :].copy()) == 1
     assert sf.made_shot(game_df.iloc[23, :].copy()) == 0
