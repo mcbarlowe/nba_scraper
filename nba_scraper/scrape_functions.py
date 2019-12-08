@@ -164,8 +164,8 @@ def scrape_pbp(v2_dict):
         "4": "Playoffs",
     }
     season_type = season_dict[clean_df["game_id"].unique()[0][2:3]]
-    if clean_df['game_id'].unique()[0][3:5] == '99':
-        season = '1999-00'
+    if clean_df["game_id"].unique()[0][3:5] == "99":
+        season = "1999-00"
     else:
         season = f"20{clean_df['game_id'].unique()[0][3:5]}-{int(clean_df['game_id'].unique()[0][3:5]) + 1}"
     date_url = (
@@ -389,7 +389,7 @@ def get_lineup(period_df, lineups, dataframe):
     # then it just pulls the unique ids from the from the dataframe itself because
     # the away/home indexes will be an empty list
 
-    if len(home_ids_names) > 5:
+    if len(home_ids_names) != 5:
         try:
             home_starting_line = list(
                 period_df[
@@ -418,7 +418,7 @@ def get_lineup(period_df, lineups, dataframe):
                     & (period_df.is_steal == 0)
                 ]["player1_id"].unique()
             )
-        if len(home_starting_line) == 5:
+        if len(home_starting_line) == 5 and len(home_ids_names) > 5:
             home_ids_names = [
                 (p[0], p[1]) for p in home_ids_names if p[0] in home_starting_line
             ]
@@ -449,9 +449,20 @@ def get_lineup(period_df, lineups, dataframe):
 
                     if len(starting_lineup) == 5:
                         break
-            home_ids_names = [(p[0], p[1]) for p in home_ids_names if p[0] not in subs]
+            if len(home_ids_names) < 5:
+                home_ids_names = [
+                    (
+                        period_df[period_df.player1_id == x].player1_id.unique()[0],
+                        period_df[period_df.player1_id == x].player1_name.unique()[0],
+                    )
+                    for x in starting_lineup
+                ]
+            else:
+                home_ids_names = [
+                    (p[0], p[1]) for p in home_ids_names if p[0] not in subs
+                ]
 
-    if len(away_ids_names) > 5:
+    if len(away_ids_names) != 5:
         try:
             away_starting_line = list(
                 period_df[
@@ -480,7 +491,7 @@ def get_lineup(period_df, lineups, dataframe):
                     & (period_df.is_steal == 0)
                 ]["player1_id"].unique()
             )
-        if len(away_starting_line) == 5:
+        if len(away_starting_line) == 5 and len(away_ids_names) > 5:
             away_ids_names = [
                 (p[0], p[1]) for p in away_ids_names if p[0] in away_starting_line
             ]
@@ -511,7 +522,18 @@ def get_lineup(period_df, lineups, dataframe):
 
                     if len(starting_lineup) == 5:
                         break
-            away_ids_names = [(p[0], p[1]) for p in away_ids_names if p[0] not in subs]
+            if len(away_ids_names) < 5:
+                away_ids_names = [
+                    (
+                        period_df[period_df.player1_id == x].player1_id.unique()[0],
+                        period_df[period_df.player1_id == x].player1_name.unique()[0],
+                    )
+                    for x in starting_lineup
+                ]
+            else:
+                away_ids_names = [
+                    (p[0], p[1]) for p in away_ids_names if p[0] not in subs
+                ]
 
     # creating columns to populate with players on the court
     period_df.loc[:, "home_player_1"] = ""

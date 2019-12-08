@@ -1,7 +1,8 @@
 from datetime import datetime
 from pathlib import Path
 import pandas as pd
-#TODO fix import for get_game_date which is now stored in helper_functions.py
+
+# TODO fix import for get_game_date which is now stored in helper_functions.py
 import nba_scraper.scrape_functions as sf
 
 
@@ -82,7 +83,7 @@ def scrape_date_range(
         return None
 
 
-def scrape_game(game_ids, data_format="pandas", data_dir=f"{Path.home()}/nbadata.csv"):
+def scrape_game(game_ids, data_format="pandas", data_dir=f"{Path.home()}/"):
     """
     function scrapes nba games and returns them in the data format requested
     by the user.
@@ -112,7 +113,7 @@ def scrape_game(game_ids, data_format="pandas", data_dir=f"{Path.home()}/nbadata
     if data_format == "pandas":
         return nba_df
     else:
-        nba_df.to_csv(data_dir, index=False)
+        nba_df.to_csv(f"{data_dir}/{game_ids[0]}.csv", index=False)
         return None
 
 
@@ -148,7 +149,6 @@ def scrape_season(season, data_format="pandas", data_dir=f"{Path.home()}/nbadata
     if data_format == "pandas":
         return nba_df
     else:
-        print
         nba_df.to_csv(f"{data_dir}/nba{season}.csv", index=False)
         return None
 
