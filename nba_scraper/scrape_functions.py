@@ -454,9 +454,7 @@ def get_lineup(period_df, lineups, dataframe):
                 for x in starting_lineup
             ]
         else:
-            home_ids_names = [
-                (p[0], p[1]) for p in home_ids_names if p[0] not in subs
-            ]
+            home_ids_names = [(p[0], p[1]) for p in home_ids_names if p[0] not in subs]
         if len(home_ids_names) != 5 and len(starting_lineup) == 5:
             home_ids_names = [
                 (
@@ -495,7 +493,7 @@ def get_lineup(period_df, lineups, dataframe):
             ]["player1_id"].unique()
         )
 
-    if {x for x in home_starting_line} != {x[0] for x in home_ids_names}:
+    if {x for x in away_starting_line} != {x[0] for x in away_ids_names}:
         starting_lineup = set()
         subs = set()
         for i in range(period_df.shape[0]):
@@ -531,9 +529,7 @@ def get_lineup(period_df, lineups, dataframe):
                 for x in starting_lineup
             ]
         else:
-            away_ids_names = [
-                (p[0], p[1]) for p in away_ids_names if p[0] not in subs
-            ]
+            away_ids_names = [(p[0], p[1]) for p in away_ids_names if p[0] not in subs]
         if len(away_ids_names) != 5 and len(starting_lineup) == 5:
             away_ids_names = [
                 (
@@ -568,16 +564,11 @@ def get_lineup(period_df, lineups, dataframe):
     # players in for each row using the starting lineup list. If there is a
     # substitution event then the player coming on replaces the player going off in
     # the list this is done for the whole period
-    if period_df.period.unique()[0] == 2:
-        print("lineup at at start of second period")
-        print(home_ids_names)
     for i in range(period_df.shape[0]):
         if (
             period_df.iloc[i, :]["event_type_de"] == "substitution"
             and pd.isnull(period_df.iloc[i, :]["visitordescription"]) == 1
         ):
-            print(period_df.iloc[i, :]["homedescription"])
-            print(home_ids_names)
             home_ids_names = [
                 ids
                 for ids in home_ids_names
