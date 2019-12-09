@@ -344,6 +344,7 @@ def get_lineup_api(game_id, period):
         f"startPeriod={period}&endPeriod={period}&startRange={start_range}&"
         f"endRange={end_range}&rangeType=2"
     )
+    print(url)
 
     lineups_req = requests.get(url, headers=USER_AGENT)
     lineup_req_dict = json.loads(lineups_req.text)
@@ -418,7 +419,9 @@ def get_lineup(period_df, lineups, dataframe):
             ]["player1_id"].unique()
         )
 
-    if {x for x in home_starting_line} != {x[0] for x in home_ids_names}:
+    if {x for x in home_starting_line} != {x[0] for x in home_ids_names} or len(
+        home_ids_names
+    ) != 5:
         starting_lineup = set()
         subs = set()
         for i in range(period_df.shape[0]):
@@ -493,7 +496,9 @@ def get_lineup(period_df, lineups, dataframe):
             ]["player1_id"].unique()
         )
 
-    if {x for x in away_starting_line} != {x[0] for x in away_ids_names}:
+    if {x for x in away_starting_line} != {x[0] for x in away_ids_names} or len(
+        away_ids_names
+    ) != 5:
         starting_lineup = set()
         subs = set()
         for i in range(period_df.shape[0]):
@@ -539,6 +544,7 @@ def get_lineup(period_df, lineups, dataframe):
                 for x in starting_lineup
             ]
 
+    print(home_ids_names)
     # creating columns to populate with players on the court
     period_df.loc[:, "home_player_1"] = ""
     period_df.loc[:, "home_player_1_id"] = ""
