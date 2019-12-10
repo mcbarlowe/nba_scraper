@@ -13,9 +13,9 @@ has two main functions `scrape_game` which scrapes an individual game or a list
 of specific games, and `scrape_season` which scrapes an entire season of regular
 season games.
 
-As of right now the package only scrapes as far back as the 2016 season. Plans
-are in place to be able to scrape older seasons, however these older seasons
-won't have x/y locations for all events as the more recent seasons do.
+The scraper goes back to the 1999-2000 season and will pull the play by play along
+with who was on the court at the time of each play. Some other various statistics may
+be calculated as well.
 
 # Installation
 
