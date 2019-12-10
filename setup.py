@@ -4,7 +4,7 @@ with open("README.md", "r") as fh:
 setup(
   name = 'nba_scraper',
   packages = ['nba_scraper'],
-  version = '0.2.9.10',
+  version = '1.0.0',
   license='GNU General Public License v3.0',
   description = 'A Python package to scrape the NBA api and return a play by play file',
   long_description=long_description,
