@@ -114,28 +114,37 @@ def scrape_pbp(v2_dict):
 
     # pulling the home and away team abbreviations and the game date
 
-    if (
-        pd.isnull(
-            pbp_v2_df[pbp_v2_df["eventmsgtype"] == 10][["homedescription"]].values[0]
-        )
-        == 1
-    ):
-        home_team_abbrev = pbp_v2_df[pbp_v2_df["eventmsgtype"] == 10][
-            "player2_team_abbreviation"
-        ].iloc[0]
-        away_team_abbrev = pbp_v2_df[pbp_v2_df["eventmsgtype"] == 10][
-            "player1_team_abbreviation"
-        ].iloc[0]
-    else:
-        home_team_abbrev = pbp_v2_df[pbp_v2_df["eventmsgtype"] == 10][
-            "player1_team_abbreviation"
-        ].iloc[0]
-        away_team_abbrev = pbp_v2_df[pbp_v2_df["eventmsgtype"] == 10][
-            "player2_team_abbreviation"
-        ].iloc[0]
+    if pbp_v2_df.game_id.unique()[0] == "0020200577":
 
-    pbp_v2_df["home_team_abbrev"] = home_team_abbrev
-    pbp_v2_df["away_team_abbrev"] = away_team_abbrev
+        home_team_abbrev = "WAS"
+        away_team_abbrev = "DEN"
+        pbp_v2_df["home_team_abbrev"] = "WAS"
+        pbp_v2_df["away_team_abbrev"] = "DEN"
+    else:
+        if (
+            pd.isnull(
+                pbp_v2_df[pbp_v2_df["eventmsgtype"] == 10][["homedescription"]].values[
+                    0
+                ]
+            )
+            == 1
+        ):
+            home_team_abbrev = pbp_v2_df[pbp_v2_df["eventmsgtype"] == 10][
+                "player2_team_abbreviation"
+            ].iloc[0]
+            away_team_abbrev = pbp_v2_df[pbp_v2_df["eventmsgtype"] == 10][
+                "player1_team_abbreviation"
+            ].iloc[0]
+        else:
+            home_team_abbrev = pbp_v2_df[pbp_v2_df["eventmsgtype"] == 10][
+                "player1_team_abbreviation"
+            ].iloc[0]
+            away_team_abbrev = pbp_v2_df[pbp_v2_df["eventmsgtype"] == 10][
+                "player2_team_abbreviation"
+            ].iloc[0]
+
+        pbp_v2_df["home_team_abbrev"] = home_team_abbrev
+        pbp_v2_df["away_team_abbrev"] = away_team_abbrev
 
     clean_df = pbp_v2_df
 
@@ -334,7 +343,7 @@ def get_lineup_api(game_id, period):
 
     if period <= 4:
         start_range = (((period - 1) * 720) * 10) + 5
-        if game_id == '0020100810' and period == 4:
+        if game_id == "0020100810" and period == 4:
             end_range = start_range + 3000
         else:
             end_range = start_range + 1000
@@ -347,7 +356,6 @@ def get_lineup_api(game_id, period):
         f"startPeriod={period}&endPeriod={period}&startRange={start_range}&"
         f"endRange={end_range}&rangeType=2"
     )
-    print(url)
 
     lineups_req = requests.get(url, headers=USER_AGENT)
     lineup_req_dict = json.loads(lineups_req.text)
