@@ -334,7 +334,10 @@ def get_lineup_api(game_id, period):
 
     if period <= 4:
         start_range = (((period - 1) * 720) * 10) + 5
-        end_range = start_range + 1000
+        if game_id == '0020100810' and period == 4:
+            end_range = start_range + 3000
+        else:
+            end_range = start_range + 1000
     else:
         start_range = ((((period - 5) * 300) + 2880) * 10) + 5
         end_range = start_range + 1000
@@ -344,6 +347,7 @@ def get_lineup_api(game_id, period):
         f"startPeriod={period}&endPeriod={period}&startRange={start_range}&"
         f"endRange={end_range}&rangeType=2"
     )
+    print(url)
 
     lineups_req = requests.get(url, headers=USER_AGENT)
     lineup_req_dict = json.loads(lineups_req.text)
