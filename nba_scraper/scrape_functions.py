@@ -506,7 +506,6 @@ def get_lineup(period_df, lineups, dataframe):
                 & (period_df.is_steal == 0)
             ]["player1_id"].unique()
         )
-
     if {x for x in away_starting_line} != {x[0] for x in away_ids_names} or len(
         away_ids_names
     ) != 5:
@@ -580,6 +579,9 @@ def get_lineup(period_df, lineups, dataframe):
     # players in for each row using the starting lineup list. If there is a
     # substitution event then the player coming on replaces the player going off in
     # the list this is done for the whole period
+    if period_df.game_id.unique()[0] == '0020200992' and period_df.period.unique()[0] == 5:
+        away_ids_names.append((922, 'Elden Campbell'))
+
     for i in range(period_df.shape[0]):
         if (
             period_df.iloc[i, :]["event_type_de"] == "substitution"
