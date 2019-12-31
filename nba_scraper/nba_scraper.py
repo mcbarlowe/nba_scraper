@@ -105,9 +105,14 @@ def scrape_game(game_ids, data_format="pandas", data_dir=f"{Path.home()}/"):
 
     scraped_games = []
     for game in game_ids:
-        print(f"Scraping game id: 00{game}")
-        scraped_games.append(sf.main_scrape(f"00{game}"))
-
+        if game == 21201214:
+            print(f"Game {game} is not available")
+            continue
+        else:
+            print(f"Scraping game id: 00{game}")
+            scraped_games.append(sf.main_scrape(f"00{game}"))
+    if len(scraped_games) == 0:
+        return
     nba_df = pd.concat(scraped_games)
 
     if data_format == "pandas":
@@ -141,8 +146,15 @@ def scrape_season(season, data_format="pandas", data_dir=f"{Path.home()}/nbadata
     game_ids = list(range(int(f"2{season-2001}00001"), int(f"2{season-2001}01231")))
 
     for game in game_ids:
-        print(f"Scraping game id: 00{game}")
-        scraped_games.append(sf.main_scrape(f"00{game}"))
+        if game == 21201214:
+            print(f"Game {game} is not available")
+            continue
+        else:
+            print(f"Scraping game id: 00{game}")
+            scraped_games.append(sf.main_scrape(f"00{game}"))
+
+    if len(scraped_games) == 0:
+        return
 
     nba_df = pd.concat(scraped_games)
 

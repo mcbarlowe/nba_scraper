@@ -362,6 +362,7 @@ def get_lineup_api(game_id, period):
         f"startPeriod={period}&endPeriod={period}&startRange={start_range}&"
         f"endRange={end_range}&rangeType=2"
     )
+    print(url)
 
     lineups_req = requests.get(url, headers=USER_AGENT)
     lineup_req_dict = json.loads(lineups_req.text)
@@ -560,6 +561,8 @@ def get_lineup(period_df, lineups, dataframe):
                 for x in starting_lineup
             ]
 
+    print(home_ids_names)
+    print(away_ids_names)
     # creating columns to populate with players on the court
     period_df.loc[:, "home_player_1"] = ""
     period_df.loc[:, "home_player_1_id"] = ""
@@ -693,6 +696,13 @@ def main_scrape(game_id):
     v2_dict = get_pbp_api(game_id)
     game_df = scrape_pbp(v2_dict)
     periods = []
+    print(
+        game_df[game_df.period == 5][
+            ["game_date", "homedescription", "neutraldescription", "visitordescription"]
+        ].head()
+    )
+    if game_id == "0021500916":
+        game_df = game_df[game_df["period"] < 5]
     for period in range(1, game_df["period"].max() + 1):
         lineups = get_lineup_api(game_id, period)
         periods.append(

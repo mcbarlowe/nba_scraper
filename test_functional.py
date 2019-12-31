@@ -33,4 +33,4 @@ def test_scrape_file():
     """
     this test the dataframe to csv function
     """
-    ns.scrape_game([29900807], data_format="csv")
+    ns.scrape_game([20200992], data_format="csv")
