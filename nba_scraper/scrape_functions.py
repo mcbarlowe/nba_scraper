@@ -106,26 +106,47 @@ def scrape_pbp(v2_dict):
     )
     pbp_v2_df.columns = list(map(str.lower, pbp_v2_df.columns))
 
-    # converting data.nba.com json to dataframe
-    # pbp_df_list = []
-    # for qtr in range(len(pbp_dict["g"]["pd"])):
-    #    pbp_df_list.append(pd.DataFrame(pbp_dict["g"]["pd"][qtr]["pla"]))
-    # pbp_df = pd.concat(pbp_df_list)
-
     # pulling the home and away team abbreviations and the game date
 
+    # TODO look at these and see if they are jump ball violations which is
+    # TODO eventmsgtype 7 instead of 10
     if pbp_v2_df.game_id.unique()[0] == "0020200577":
-
         home_team_abbrev = "WAS"
         away_team_abbrev = "DEN"
         pbp_v2_df["home_team_abbrev"] = "WAS"
         pbp_v2_df["away_team_abbrev"] = "DEN"
+
     elif pbp_v2_df.game_id.unique()[0] == "0020300286":
         home_team_abbrev = "NOH"
         away_team_abbrev = "MIL"
         pbp_v2_df["home_team_abbrev"] = "NOH"
         pbp_v2_df["away_team_abbrev"] = "MIL"
 
+    elif pbp_v2_df.game_id.unique()[0] == "0021700259":
+        home_team_abbrev = "HOU"
+        away_team_abbrev = "DEN"
+        pbp_v2_df["home_team_abbrev"] = "HOU"
+        pbp_v2_df["away_team_abbrev"] = "DEN"
+    elif pbp_v2_df.game_id.unique()[0] == "0021700477":
+        home_team_abbrev = "OKC"
+        away_team_abbrev = "ATL"
+        pbp_v2_df["home_team_abbrev"] = "OKC"
+        pbp_v2_df["away_team_abbrev"] = "ATL"
+    elif pbp_v2_df.game_id.unique()[0] == "0021700957":
+        home_team_abbrev = "CHA"
+        away_team_abbrev = "PHI"
+        pbp_v2_df["home_team_abbrev"] = "CHA"
+        pbp_v2_df["away_team_abbrev"] = "PHI"
+    elif pbp_v2_df.game_id.unique()[0] == "0021900251":
+        home_team_abbrev = "DAL"
+        away_team_abbrev = "LAC"
+        pbp_v2_df["home_team_abbrev"] = "DAL"
+        pbp_v2_df["away_team_abbrev"] = "LAC"
+    elif pbp_v2_df.game_id.unique()[0] == "0021900539":
+        home_team_abbrev = "CHA"
+        away_team_abbrev = "IND"
+        pbp_v2_df["home_team_abbrev"] = "CHA"
+        pbp_v2_df["away_team_abbrev"] = "IND"
     else:
         if (
             pd.isnull(
@@ -310,17 +331,12 @@ def get_pbp_api(game_id):
     game_id          - String representing game id
 
     Outputs:
-    pbp_dict         - Dictionary of the JSON response from data.nba.com api
     v2_dict          - Dictionary of the JSON response from the stats.nba.com api
     """
     v2_api_url = (
         "https://stats.nba.com/stats/playbyplayv2?"
         f"EndPeriod=14&GameID={game_id}&StartPeriod=1"
     )
-
-    # this will be the main url used for the v2 api url once testing is done
-    # v2 api will contain all the player info for each play in the game while the
-    # pbp_api_url will contain xy coords for each event
 
     try:
         v2_rep = requests.get(v2_api_url, headers=USER_AGENT)
@@ -362,7 +378,6 @@ def get_lineup_api(game_id, period):
         f"startPeriod={period}&endPeriod={period}&startRange={start_range}&"
         f"endRange={end_range}&rangeType=2"
     )
-    print(url)
 
     lineups_req = requests.get(url, headers=USER_AGENT)
     lineup_req_dict = json.loads(lineups_req.text)
@@ -561,8 +576,6 @@ def get_lineup(period_df, lineups, dataframe):
                 for x in starting_lineup
             ]
 
-    print(home_ids_names)
-    print(away_ids_names)
     # creating columns to populate with players on the court
     period_df.loc[:, "home_player_1"] = ""
     period_df.loc[:, "home_player_1_id"] = ""
@@ -696,11 +709,6 @@ def main_scrape(game_id):
     v2_dict = get_pbp_api(game_id)
     game_df = scrape_pbp(v2_dict)
     periods = []
-    print(
-        game_df[game_df.period == 5][
-            ["game_date", "homedescription", "neutraldescription", "visitordescription"]
-        ].head()
-    )
     if game_id == "0021500916":
         game_df = game_df[game_df["period"] < 5]
     for period in range(1, game_df["period"].max() + 1):
