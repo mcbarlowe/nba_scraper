@@ -14,12 +14,13 @@ import time
 import pandas as pd
 import numpy as np
 
+from nba_scraper.helper_functions import EVENT_TYPE_DICT, get_season
 from nba_scraper.stat_calc_functions import (
-    made_shot,
-    parse_foul,
+    wnba_made_shot,
+    wnba_parse_foul,
     wnba_shot_types,
     wnba_seconds_elapsed,
-    calc_points_made,
+    wnba_points_made,
 )
 
 USER_AGENT = {
@@ -97,7 +98,58 @@ def parse_wnba_pbp(game_id):
     pbp_df["seconds_elapsed"] = pbp_df.apply(wnba_seconds_elapsed, axis=1)
     pbp_df["shot_type"] = pbp_df.apply(wnba_shot_types, axis=1)
 
-    print(pbp_df.head())
+    # create column whether shot was succesful or not
+    pbp_df["shot_made"] = pbp_df.apply(wnba_made_shot, axis=1)
+
+    # calculate event length of each event in seconds
+    pbp_df["event_length"] = pbp_df["seconds_elapsed"] - pbp_df[
+        "seconds_elapsed"
+    ].shift(1)
+
+    # determine whether shot was a three pointer
+    pbp_df["is_three"] = np.where(pbp_df["de"].str.contains("3pt").fillna(False), 1, 0,)
+
+    pbp_df["event_type_de"] = pbp_df[["etype"]].replace({"etype": EVENT_TYPE_DICT})
+
+    # create a column that says whether the shot was blocked or not
+    pbp_df["is_block"] = np.where(pbp_df["de"].str.contains("BLK"), 1, 0,)
+
+    # determine points earned
+    pbp_df["points_made"] = pbp_df.apply(wnba_points_made, axis=1)
+
+    # create columns that determine if rebound is offenseive or deffensive
+    pbp_df["is_o_rebound"] = np.where(
+        (pbp_df["event_type_de"] == "rebound")
+        & (pbp_df["tid"] == pbp_df["tid"].shift(1))
+        & (pbp_df["pid"] != 0),
+        1,
+        0,
+    )
+    pbp_df["is_d_rebound"] = np.where(
+        (pbp_df["event_type_de"] == "rebound")
+        & (pbp_df["tid"] != pbp_df["tid"].shift(1))
+        & (pbp_df["pid"] != 0),
+        1,
+        0,
+    )
+
+    # create columns to determine turnovers and steals
+    pbp_df["is_turnover"] = np.where(
+        pbp_df["de"].str.contains("Turnover").fillna(False), 1, 0,
+    )
+    pbp_df["is_steal"] = np.where(
+        pbp_df["de"].str.contains("Steal").fillna(False), 1, 0,
+    )
+
+    # determine what type of fouls are being commited
+    pbp_df["foul_type"] = pbp_df.apply(wnba_parse_foul, axis=1)
+
+    # determine if a shot is a putback off an offensive reboundk
+    pbp_df["is_putback"] = np.where(
+        (pbp_df["is_o_rebound"].shift(1) == 1) & (pbp_df["event_length"] <= 3), 1, 0
+    )
+
+    print(pbp_df.head(10))
 
 
 def wnba_main_scrape(game_id):

@@ -5,6 +5,35 @@ data.
 import numpy as np
 
 
+foul_dict = {
+    0: "no foul",
+    1: "personal",
+    2: "shooting",
+    3: "loose ball",
+    4: "offensive",
+    5: "inbound",
+    6: "away from play",
+    7: "elbow",
+    8: "punching",
+    9: "clear path",
+    10: "double personal",
+    11: "technical",
+    12: "non-unsportsmanlike technical",
+    13: "hanging technical",
+    14: "flagrant type 1",
+    15: "flagrant type 2",
+    16: "double technical",
+    17: "defense 3 second",
+    18: "delay technical",
+    19: "taunting technical",
+    20: "player_control",
+    21: "indirect technical",
+    25: "excess timeout technical",
+    26: "offensive charge",
+    27: "personal block",
+    28: "shooting block",
+    30: "too many players technical",
+}
 SHOT_DICT = {
     1: {
         0: "No Shot",
@@ -188,6 +217,33 @@ SHOT_DICT = {
         29: "Free Throw Flagrant 3 of 3",
     },
 }
+
+
+def wnba_made_shot(row):
+    """
+    function to determine whether shot was made or missed
+
+    Input:
+    row - pandas row
+
+    Output:
+    shot_made - binary variable
+    """
+
+    de = row["de"]
+
+    if row["etype"] == 1:
+        return 1
+    elif row["etype"] == 2:
+        return 0
+    elif row["etype"] == 3 and ("Missed" in de):
+        return 0
+    elif row["etype"] == 3:
+        return 1
+    else:
+        return np.nan
+
+
 def made_shot(row):
     """
     function to determine whether shot was made or missed
@@ -220,6 +276,27 @@ def made_shot(row):
         return np.nan
 
 
+def wnba_parse_foul(row):
+    """
+    function to determine what type of foul is being commited by the player
+
+    Input:
+    row - row of nba play by play
+
+    Output:
+    foul_type - the foul type of the fould commited by the player
+    """
+
+    try:
+        if row["etype"] == 6:
+            try:
+                return foul_dict[row["mtype"]]
+            except KeyError:
+                return np.nan
+        return np.nan
+    except KeyError:
+        return np.nan
+
 def parse_foul(row):
     """
     function to determine what type of foul is being commited by the player
@@ -231,35 +308,6 @@ def parse_foul(row):
     foul_type - the foul type of the fould commited by the player
     """
 
-    foul_dict = {
-        0: "no foul",
-        1: "personal",
-        2: "shooting",
-        3: "loose ball",
-        4: "offensive",
-        5: "inbound",
-        6: "away from play",
-        7: "elbow",
-        8: "punching",
-        9: "clear path",
-        10: "double personal",
-        11: "technical",
-        12: "non-unsportsmanlike technical",
-        13: "hanging technical",
-        14: "flagrant type 1",
-        15: "flagrant type 2",
-        16: "double technical",
-        17: "defense 3 second",
-        18: "delay technical",
-        19: "taunting technical",
-        20: "player_control",
-        21: "indirect technical",
-        25: "excess timeout technical",
-        26: "offensive charge",
-        27: "personal block",
-        28: "shooting block",
-        30: "too many players technical",
-    }
     try:
         if row["eventmsgtype"] == 6:
             try:
@@ -288,6 +336,7 @@ def wnba_shot_types(row):
             return np.nan
     except KeyError:
         return np.nan
+
 
 def parse_shot_types(row):
     """
@@ -366,6 +415,26 @@ def create_seconds_elapsed(row):
         )
 
     return time_in_seconds
+
+
+def wnba_points_made(row):
+    """
+    function to calculate the points earned by a team with each shot made
+
+    Inputs:
+    row - row of pbp dataframe
+
+    Outputs - value of shot made
+    """
+
+    if row["is_three"] == 1 and row["shot_made"] == 1:
+        return 3
+    elif row["is_three"] == 0 and row["shot_made"] == 1 and row["etype"] != 3:
+        return 2
+    elif row["etype"] == 3 and row["shot_made"] == 1:
+        return 1
+    else:
+        return 0
 
 
 def calc_points_made(row):

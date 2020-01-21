@@ -192,7 +192,6 @@ def scrape_pbp(v2_dict):
         .unique()
     )
 
-    # TODO get date
     season_dict = {
         "1": "Pre+Season",
         "2": "Regular+Season",
@@ -239,8 +238,6 @@ def scrape_pbp(v2_dict):
         {"eventmsgtype": EVENT_TYPE_DICT}
     )
 
-    # create and shot type description column
-    clean_df["shot_type_de"] = ""
     # create column whether shot was succesful or not
     clean_df["shot_made"] = clean_df.apply(made_shot, axis=1)
 
@@ -257,7 +254,7 @@ def scrape_pbp(v2_dict):
     # Clean time to get a seconds elapsed column
     clean_df["seconds_elapsed"] = clean_df.apply(create_seconds_elapsed, axis=1)
 
-    # calculate event length of each even in seconds
+    # calculate event length of each event in seconds
     clean_df["event_length"] = clean_df["seconds_elapsed"] - clean_df[
         "seconds_elapsed"
     ].shift(1)
