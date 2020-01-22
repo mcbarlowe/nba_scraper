@@ -36,6 +36,36 @@ USER_AGENT = {
 }
 
 
+def get_team_ids(pbp_df):
+    """
+    this function gets the home and away team ids
+
+    Inputs:
+    pbp_df    - dataframe of the games play by play
+
+    Outputs:
+    home_team_id   - team id of the home team
+    away_team_id   - team id of the away team
+    """
+
+    team_ids = pbp_df["tid"].unique()
+    team_ids = [t for t in team_ids if t > 0]
+    print(team_ids)
+    team_url = f"https://stats.wnba.com/stats/teamdetails?TeamID={team_ids[0]}"
+    team_data = requests.get(team_url, headers=USER_AGENT)
+    print(team_data.text)
+    team_data = json.loads(team_data.text)
+    if (
+        pbp_df["home_team_abbrev"].unique()[0]
+        == team_data["resultSets"][0]["rowSet"][0][2]
+    ):
+        home_team_id, away_team_id = team_ids[0], team_ids[1]
+    else:
+        home_team_id, away_team_id = team_ids[1], team_ids[0]
+
+    return home_team_id, away_team_id
+
+
 def get_wnba_pbp_api(game_id, quarter, season):
     """
     function gets both JSON requests from the two different APIs if both
@@ -148,6 +178,7 @@ def parse_wnba_pbp(game_id):
     pbp_df["is_putback"] = np.where(
         (pbp_df["is_o_rebound"].shift(1) == 1) & (pbp_df["event_length"] <= 3), 1, 0
     )
+    pbp_df["home_team_id"], pbp_df["away_team_id"] = get_team_ids(pbp_df)
 
     print(pbp_df.head(10))
 
