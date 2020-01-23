@@ -28,15 +28,17 @@ from nba_scraper.stat_calc_functions import (
 # TODO look at replacing this with the fake-useragent package Matt Barlowe 2019-12-04
 # have to pass this to the requests function or the api will return a 403 code
 USER_AGENT = {
-    "Host": "stats.nba.com",
     "Connection": "keep-alive",
-    "Cache-Control": "max-age=0",
-    "Upgrade-Insecure-Requests": "1",
-    "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/66.0.3359.181 Safari/537.36",
-    "Referer": "stats.nba.com",
+    "Accept": "application/json, text/plain, */*",
+    "x-nba-stats-token": "true",
+    "X-NewRelic-ID": "VQECWF5UChAHUlNTBwgBVw==",
+    "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.130 Safari/537.36",
+    "x-nba-stats-origin": "stats",
+    "Sec-Fetch-Site": "same-origin",
+    "Sec-Fetch-Mode": "cors",
+    "Referer": "https://stats.nba.com/",
     "Accept-Encoding": "gzip, deflate, br",
-    "Accept-Language": "en-US,en;q=0.9",
-    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8",
+    "Accept-Language": "en-US,en;q=0.9,es;q=0.8,fr;q=0.7",
 }
 
 
