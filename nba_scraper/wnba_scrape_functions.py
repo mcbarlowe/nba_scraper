@@ -24,17 +24,14 @@ from nba_scraper.stat_calc_functions import (
 )
 
 USER_AGENT = {
-    "Connection": "keep-alive",
+    "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:72.0) Gecko/20100101 Firefox/72.0",
     "Accept": "application/json, text/plain, */*",
-    "x-nba-stats-token": "true",
+    "Accept-Language": "en-US,en;q=0.5",
     "X-NewRelic-ID": "VQECWF5UChAHUlNTBwgBVw==",
-    "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.130 Safari/537.36",
     "x-nba-stats-origin": "stats",
-    "Sec-Fetch-Site": "same-origin",
-    "Sec-Fetch-Mode": "cors",
-    "Referer": "https://stats.wnba.com/",
-    "Accept-Encoding": "gzip, deflate, br",
-    "Accept-Language": "en-US,en;q=0.9,es;q=0.8,fr;q=0.7",
+    "x-nba-stats-token": "true",
+    "Connection": "keep-alive",
+    "Referer": "https://stats.nba.com/",
 }
 
 
@@ -213,6 +210,7 @@ def get_wnba_lineup(game_id, period):
     )
 
     lineups_req = requests.get(url, headers=USER_AGENT)
+    print(lineups_req.text)
     lineup_req_dict = json.loads(lineups_req.text)
 
     return lineup_req_dict
@@ -549,7 +547,6 @@ def wnba_main_scrape(game_id):
 
     for period in range(1, pbp_df["period"].max() + 1):
         lineups = get_wnba_lineup(game_id, period)
-        print(lineups)
         """
         periods.append(
             get_lineup(pbp_df[pbp_df["period"] == period].copy(), lineups, pbp_df,)

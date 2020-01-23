@@ -28,17 +28,14 @@ from nba_scraper.stat_calc_functions import (
 # TODO look at replacing this with the fake-useragent package Matt Barlowe 2019-12-04
 # have to pass this to the requests function or the api will return a 403 code
 USER_AGENT = {
-    "Connection": "keep-alive",
+    "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:72.0) Gecko/20100101 Firefox/72.0",
     "Accept": "application/json, text/plain, */*",
-    "x-nba-stats-token": "true",
+    "Accept-Language": "en-US,en;q=0.5",
     "X-NewRelic-ID": "VQECWF5UChAHUlNTBwgBVw==",
-    "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.130 Safari/537.36",
     "x-nba-stats-origin": "stats",
-    "Sec-Fetch-Site": "same-origin",
-    "Sec-Fetch-Mode": "cors",
+    "x-nba-stats-token": "true",
+    "Connection": "keep-alive",
     "Referer": "https://stats.nba.com/",
-    "Accept-Encoding": "gzip, deflate, br",
-    "Accept-Language": "en-US,en;q=0.9,es;q=0.8,fr;q=0.7",
 }
 
 
@@ -239,6 +236,9 @@ def scrape_pbp(v2_dict):
     clean_df["event_type_de"] = clean_df[["eventmsgtype"]].replace(
         {"eventmsgtype": EVENT_TYPE_DICT}
     )
+
+    # DON'T DELETE THIS WILL BRAKE WHOLE PROGRAM
+    clean_df["shot_type_de"] = ""
 
     # create column whether shot was succesful or not
     clean_df["shot_made"] = clean_df.apply(made_shot, axis=1)
