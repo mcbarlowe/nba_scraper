@@ -191,28 +191,7 @@ def scrape_pbp(v2_dict):
         .unique()
     )
 
-    season_dict = {
-        "1": "Pre+Season",
-        "2": "Regular+Season",
-        "3": "All+Star",
-        "4": "Playoffs",
-    }
-    season_type = season_dict[clean_df["game_id"].unique()[0][2:3]]
-    if clean_df["game_id"].unique()[0][3:5] == "99":
-        season = "1999-00"
-    else:
-        season = f"20{clean_df['game_id'].unique()[0][3:5]}-{int(clean_df['game_id'].unique()[0][3:5]) + 1}"
-    date_url = (
-        f"https://stats.nba.com/stats/teamgamelog?DateFrom=&DateTo=&LeagueID=&"
-        f"Season={season}"
-        f"&SeasonType={season_type}&TeamID={clean_df['home_team_id'].unique()[0]}"
-    )
-    dates = requests.get(date_url, headers=USER_AGENT)
-    dates_dict = json.loads(dates.text)
-    schedule = dates_dict["resultSets"][0]["rowSet"]
-    game_date = [g[2] for g in schedule if g[1] == clean_df["game_id"].unique()[0]]
-    formatted_date = datetime.datetime.strptime(game_date[0], "%b %d, %Y")
-    clean_df["game_date"] = formatted_date
+    clean_df["game_date"] = ""
     clean_df.loc[:, ("season")] = f"20{int(clean_df['game_id'].unique()[0][3:5])+1}"
 
     # TODO columns to pull out [['evt', 'locX', 'locY', 'hs', 'vs', 'de']]
@@ -716,5 +695,27 @@ def main_scrape(game_id):
             get_lineup(game_df[game_df["period"] == period].copy(), lineups, game_df,)
         )
     game_df = pd.concat(periods).reset_index(drop=True)
+    season_dict = {
+        "1": "Pre+Season",
+        "2": "Regular+Season",
+        "3": "All+Star",
+        "4": "Playoffs",
+    }
+    season_type = season_dict[game_df["game_id"].unique()[0][2:3]]
+    if game_df["game_id"].unique()[0][3:5] == "99":
+        season = "1999-00"
+    else:
+        season = f"20{game_df['game_id'].unique()[0][3:5]}-{int(game_df['game_id'].unique()[0][3:5]) + 1}"
+    date_url = (
+        f"https://stats.nba.com/stats/teamgamelog?DateFrom=&DateTo=&LeagueID=&"
+        f"Season={season}"
+        f"&SeasonType={season_type}&TeamID={game_df['home_team_id'].unique()[0]}"
+    )
+    dates = requests.get(date_url, headers=USER_AGENT)
+    dates_dict = json.loads(dates.text)
+    schedule = dates_dict["resultSets"][0]["rowSet"]
+    game_date = [g[2] for g in schedule if g[1] == game_df["game_id"].unique()[0]]
+    formatted_date = datetime.datetime.strptime(game_date[0], "%b %d, %Y")
+    game_df["game_date"] = formatted_date
 
     return game_df
