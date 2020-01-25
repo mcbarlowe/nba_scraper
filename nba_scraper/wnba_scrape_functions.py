@@ -35,6 +35,26 @@ USER_AGENT = {
 }
 
 
+def get_player_name(player_id):
+    """
+    function to get the players name givn a player id
+
+    Inputs:
+    player_id   - id of player you want the name of
+
+    Ouputs:
+    player_name - full name of player with given player_id
+    """
+    player_url = f"https://a.data.nba.com/wnba/player/{player_id}"
+    player_data = requests.get(player_url, headers=USER_AGENT)
+    player_dict = json.loads(player_data.text)
+    player_name = (
+        f"{player_dict['data']['info']['fn']} {player_dict['data']['info']['ln']}"
+    )
+
+    return player_name
+
+
 def get_team_ids(pbp_df):
     """
     this function gets the home and away team ids
@@ -48,10 +68,12 @@ def get_team_ids(pbp_df):
     """
 
     team_ids = pbp_df["tid"].unique()
+    print(team_ids)
     team_ids = [t for t in team_ids if t > 0]
     team_url = f"https://stats.wnba.com/stats/teamdetails?TeamID={team_ids[0]}"
     team_data = requests.get(team_url, headers=USER_AGENT)
     team_data = json.loads(team_data.text)
+    print(team_data)
 
     if (
         pbp_df["home_team_abbrev"].unique()[0]
@@ -103,7 +125,10 @@ def parse_wnba_pbp(game_id):
     wnba_pbp_df   - wnba play by play dataframe
     """
 
-    season = f"20{game_id[2:4]}"
+    if game_id[2:4] in ["98", "99"]:
+        season = f"19{game_id[2:4]}"
+    else:
+        season = f"20{game_id[2:4]}"
     results = []
     for x in range(1, 15):
         try:
@@ -179,8 +204,6 @@ def parse_wnba_pbp(game_id):
     )
     pbp_df["home_team_id"], pbp_df["away_team_id"] = get_team_ids(pbp_df)
 
-    print(pbp_df.head(10))
-
     return pbp_df
 
 
@@ -247,45 +270,39 @@ def get_lineup(period_df, lineups, dataframe):
     # then it just pulls the unique ids from the from the dataframe itself because
     # the away/home indexes will be an empty list
 
-    if len(home_ids_names) != 5 or len(away_ids_names) != 5:
-        # subsets main dataframe by period and subsets into a home and away subs
+    if len(away_ids_names) != 5:
+
         subs_df = period_df[(period_df.event_type_de == "substitution")]
         away_subs = subs_df[subs_df["tid"] == subs_df["away_team_id"]]
-        home_subs = subs_df[subs_df["tid"] == subs_df["home_team_id"]]
         away_indexes = list(away_subs.index)
-        home_indexes = list(home_subs.index)
-        print(away_subs.head(), home_subs.head())
 
         try:
-            home_starting_line = list(
+            away_starting_line = list(
                 period_df[
-                    (period_df['tid'] == period_df["home_team_id"].unique()[0])
+                    (period_df["tid"] == period_df["away_team_id"].unique()[0])
                     & (~pd.isnull(period_df["pid"]))
                     & (period_df.is_block == 0)
                     & (period_df.is_steal == 0)
                 ]
-                .loc[: home_indexes[0], :]["player1_id"]
+                .loc[: away_indexes[0], :]["pid"]
                 .unique()
             )
         except IndexError:
-            home_starting_line = list(
+            away_starting_line = list(
                 period_df[
-                    (period_df['tid'] == period_df["home_team_id"].unique()[0])
+                    (period_df["tid"] == period_df["away_team_id"].unique()[0])
                     & (~pd.isnull(period_df["pid"]))
                     & (period_df.is_block == 0)
                     & (period_df.is_steal == 0)
-                ]["player1_id"]
-                .unique())
+                ]["pid"].unique()
+            )
 
-        if {x for x in home_starting_line} != {x[0] for x in home_ids_names} or len(
-            home_ids_names
-        ) != 5:
+        if away_starting_line != 5:
             starting_lineup = set()
             subs = set()
             for i in range(period_df.shape[0]):
                 if (
-                    period_df.iloc[i, :]["tid"]
-                    == period_df["home_team_id"].unique()[0]
+                    period_df.iloc[i, :]["tid"] == period_df["away_team_id"].unique()[0]
                     and period_df.iloc[i, :]["is_block"] == 0
                     and period_df.iloc[i, :]["is_steal"] == 0
                 ):
@@ -296,110 +313,79 @@ def get_lineup(period_df, lineups, dataframe):
                         ):
                             starting_lineup.add(period_df.iloc[i, :]["pid"])
                     else:
-                        if period_df.iloc[i, :]["player2_id"] not in starting_lineup:
-                            subs.add(period_df.iloc[i, :]["player2_id"])
-                        if period_df.iloc[i, :]["player1_id"] not in subs:
-                            starting_lineup.add(period_df.iloc[i, :]["player1_id"])
+                        if period_df.iloc[i, :]["epid"] not in starting_lineup:
+                            subs.add(period_df.iloc[i, :]["epid"])
+                        if period_df.iloc[i, :]["pid"] not in subs:
+                            starting_lineup.add(period_df.iloc[i, :]["pid"])
 
                     if len(starting_lineup) == 5:
                         break
-            if len(home_ids_names) < 5:
-                home_ids_names = [
-                    (
-                        period_df[period_df.player1_id == x].player1_id.unique()[0],
-                        period_df[period_df.player1_id == x].player1_name.unique()[0],
-                    )
-                    for x in starting_lineup
-                ]
-            else:
-                home_ids_names = [(p[0], p[1]) for p in home_ids_names if p[0] not in subs]
-            if len(home_ids_names) != 5 and len(starting_lineup) == 5:
-                home_ids_names = [
-                    (
-                        period_df[period_df.player1_id == x].player1_id.unique()[0],
-                        period_df[period_df.player1_id == x].player1_name.unique()[0],
-                    )
-                    for x in starting_lineup
+            if len(away_ids_names) < 5:
+                away_ids_names = [(x, get_player_name(x)) for x in starting_lineup]
+            elif len(home_ids_names) > 5:
+                away_ids_names = [
+                    (p[0], p[1]) for p in away_ids_names if p[0] not in subs
                 ]
 
+    if len(home_ids_names) != 5:
+        # subsets main dataframe by period and subsets into a home and away subs
+        subs_df = period_df[(period_df.event_type_de == "substitution")]
+        home_subs = subs_df[subs_df["tid"] == subs_df["home_team_id"]]
+        home_indexes = list(home_subs.index)
+
         try:
-            away_starting_line = list(
+            home_starting_line = list(
                 period_df[
-                    (period_df.event_team == period_df["away_team_abbrev"].unique()[0])
-                    & (~pd.isnull(period_df["player1_name"]))
-                    & (
-                        period_df["player1_team_abbreviation"]
-                        == period_df["away_team_abbrev"].unique()[0]
-                    )
+                    (period_df["tid"] == period_df["home_team_id"].unique()[0])
+                    & (~pd.isnull(period_df["pid"]))
                     & (period_df.is_block == 0)
                     & (period_df.is_steal == 0)
                 ]
-                .loc[: away_indexes[0], :]["player1_id"]
+                .loc[: home_indexes[0], :]["pid"]
                 .unique()
             )
         except IndexError:
-            away_starting_line = list(
+            home_starting_line = list(
                 period_df[
-                    (period_df.event_team == period_df["away_team_abbrev"].unique()[0])
-                    & (~pd.isnull(period_df["player1_name"]))
-                    & (
-                        period_df["player1_team_abbreviation"]
-                        == period_df["away_team_abbrev"].unique()[0]
-                    )
+                    (period_df["tid"] == period_df["home_team_id"].unique()[0])
+                    & (~pd.isnull(period_df["pid"]))
                     & (period_df.is_block == 0)
                     & (period_df.is_steal == 0)
-                ]["player1_id"].unique()
+                ]["pid"].unique()
             )
-        if {x for x in away_starting_line} != {x[0] for x in away_ids_names} or len(
-            away_ids_names
-        ) != 5:
+
+        if home_starting_line != 5:
             starting_lineup = set()
             subs = set()
             for i in range(period_df.shape[0]):
                 if (
-                    period_df.iloc[i, :]["event_team"]
-                    == period_df["away_team_abbrev"].unique()[0]
-                    and pd.isnull(period_df.iloc[i, :]["player1_name"]) != 1
-                    and period_df.iloc[i, :]["player1_team_abbreviation"]
-                    == period_df.iloc[i, :]["away_team_abbrev"]
+                    period_df.iloc[i, :]["tid"] == period_df["home_team_id"].unique()[0]
                     and period_df.iloc[i, :]["is_block"] == 0
                     and period_df.iloc[i, :]["is_steal"] == 0
                 ):
                     if period_df.iloc[i, :]["event_type_de"] != "substitution":
                         if (
-                            period_df.iloc[i, :]["player1_id"] != 0
-                            and period_df.iloc[i, :]["player1_id"] not in subs
+                            period_df.iloc[i, :]["pid"] != 0
+                            and period_df.iloc[i, :]["pid"] not in subs
                         ):
-                            starting_lineup.add(period_df.iloc[i, :]["player1_id"])
+                            starting_lineup.add(period_df.iloc[i, :]["pid"])
                     else:
-                        if period_df.iloc[i, :]["player2_id"] not in starting_lineup:
-                            subs.add(period_df.iloc[i, :]["player2_id"])
-                        if period_df.iloc[i, :]["player1_id"] not in subs:
-                            starting_lineup.add(period_df.iloc[i, :]["player1_id"])
+                        if period_df.iloc[i, :]["epid"] not in starting_lineup:
+                            subs.add(period_df.iloc[i, :]["epid"])
+                        if period_df.iloc[i, :]["pid"] not in subs:
+                            starting_lineup.add(period_df.iloc[i, :]["pid"])
 
                     if len(starting_lineup) == 5:
                         break
-            if len(away_ids_names) < 5:
-                away_ids_names = [
-                    (
-                        period_df[period_df.player1_id == x].player1_id.unique()[0],
-                        period_df[period_df.player1_id == x].player1_name.unique()[0],
-                    )
-                    for x in starting_lineup
+            if len(home_ids_names) < 5:
+                home_ids_names = [(x, get_player_name(x)) for x in starting_lineup]
+            elif len(home_ids_names) > 5:
+                home_ids_names = [
+                    (p[0], p[1]) for p in home_ids_names if p[0] not in subs
                 ]
-            else:
-                away_ids_names = [(p[0], p[1]) for p in away_ids_names if p[0] not in subs]
-            if len(away_ids_names) != 5 and len(starting_lineup) == 5:
-                away_ids_names = [
-                    (
-                        period_df[period_df.player1_id == x].player1_id.unique()[0],
-                        period_df[period_df.player1_id == x].player1_name.unique()[0],
-                    )
-                    for x in starting_lineup
-                ]
-        """
 
-    print(period_df.shape)
+    if period_df.shape[1] == 37:
+        period_df.loc[:, "dummy_col"] = ""
     # creating columns to populate with players on the court
     period_df.loc[:, "home_player_1"] = ""
     period_df.loc[:, "home_player_1_id"] = ""
@@ -426,7 +412,6 @@ def get_lineup(period_df, lineups, dataframe):
     # substitution event then the player coming on replaces the player going off in
     # the list this is done for the whole period
 
-    print(period_df.shape)
     for i in range(period_df.shape[0]):
         if (
             period_df.iloc[i, :]["event_type_de"] == "substitution"
@@ -539,7 +524,6 @@ def wnba_main_scrape(game_id):
     pbp_df = parse_wnba_pbp(game_id)
 
     periods = []
-    print(pbp_df.columns)
 
     for period in range(1, pbp_df["period"].max() + 1):
         lineups = get_wnba_lineup(game_id, period)
@@ -548,12 +532,13 @@ def wnba_main_scrape(game_id):
         )
 
     pbp_df = pd.concat(periods)
-    print(pbp_df.loc[:, "home_player_1":].head())
+
+    return pbp_df
 
 
 def main():
     # parse_wnba_pbp("021900122")
-    wnba_main_scrape("021900122")
+    wnba_main_scrape("021900001")
 
 
 if __name__ == "__main__":

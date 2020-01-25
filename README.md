@@ -17,6 +17,13 @@ The scraper goes back to the 1999-2000 season and will pull the play by play alo
 with who was on the court at the time of each play. Some other various statistics may
 be calculated as well.
 
+As of version 1.0.8 the scraper will now scrape WNBA games as well as NBA games.
+Just call `wnba_scrape_game` instead of `scrape_game`. The parameters and usage is
+exactly the same as `scrape_game` function. As of right now I know it goes
+back to the 2005 season maybe further just haven't tested.
+Be warned it is much slower than the nba scraper due to the extra api calls
+needed to pull in player names that are readily available in the NBA api itself.
+
 # Installation
 
 To install this package just type this at the command line:

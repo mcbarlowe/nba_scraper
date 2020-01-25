@@ -4,6 +4,7 @@ import pandas as pd
 
 # TODO fix import for get_game_date which is now stored in helper_functions.py
 import nba_scraper.scrape_functions as sf
+import nba_scraper.wnba_scrape_functions as wsf
 
 
 def check_format(data_format):
@@ -80,6 +81,42 @@ def scrape_date_range(
         return pd.concat(scraped_games)
     else:
         pd.concat(scraped_games).to_csv(data_dir, index=False)
+        return None
+
+
+def scrape_wnba_game(game_ids, data_format="pandas", data_dir=f"{Path.home()}/"):
+    """
+    function scrapes wnba games and returns them in the data format requested
+    by the user.
+
+    Inputs:
+    game_ids    - list of nba game ids to scrape
+    data_format - the format of the data the user wants returned. This is either
+                  a pandas dataframe or a csv file
+    data_dir    - a filepath which to write the csv file if that option is chosen.
+                  If no filepath is passed then it will attempt to write to the
+                  user's home directory
+
+    Outputs:
+    wnba_df     - If pandas is chosen then this function will
+                 return this pandas dataframe object. If csv then
+                 a csv file will be written but None will be returned
+    """
+
+    check_format(data_format)
+
+    scraped_games = []
+    for game in game_ids:
+        print(f"Scraping game id: 0{game}")
+        scraped_games.append(wsf.wnba_main_scrape(f"0{game}"))
+    if len(scraped_games) == 0:
+        return
+    wnba_df = pd.concat(scraped_games)
+
+    if data_format == "pandas":
+        return wnba_df
+    else:
+        wnba_df.to_csv(f"{data_dir}/{game_ids[0]}.csv", index=False)
         return None
 
 
