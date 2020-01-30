@@ -192,8 +192,13 @@ def scrape_pbp(v2_dict):
     )
 
     clean_df["game_date"] = ""
-    clean_df.loc[:, ("season")] = f"20{int(clean_df['game_id'].unique()[0][3:5])+1}"
 
+    if clean_df["game_id"].unique()[0][3:5] == "99":
+        clean_df["season"] = 2000
+    elif clean_df["game_id"].unique()[0][3:5] == "00":
+        clean_df["season"] = 2001
+    else:
+        clean_df.loc[:, ("season")] = f"20{int(clean_df['game_id'].unique()[0][3:5])+1}"
     # TODO columns to pull out [['evt', 'locX', 'locY', 'hs', 'vs', 'de']]
     # create an event team colum
     clean_df["event_team"] = np.where(
