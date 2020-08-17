@@ -714,22 +714,26 @@ def main_scrape(game_id):
         "2": "Regular+Season",
         "3": "All+Star",
         "4": "Playoffs",
+        "5": "Regular+Season",
     }
     season_type = season_dict[game_df["game_id"].unique()[0][2:3]]
-    if game_df["game_id"].unique()[0][3:5] == "99":
-        season = "1999-00"
+    if game_df["game_id"].unique()[0][2:3] == "5":
+        game_df["game_date"] = "2020-08-15"
     else:
-        season = f"20{game_df['game_id'].unique()[0][3:5]}-{int(game_df['game_id'].unique()[0][3:5]) + 1}"
-    date_url = (
-        f"https://stats.nba.com/stats/teamgamelog?DateFrom=&DateTo=&LeagueID=&"
-        f"Season={season}"
-        f"&SeasonType={season_type}&TeamID={game_df['home_team_id'].unique()[0]}"
-    )
-    dates = requests.get(date_url, headers=USER_AGENT)
-    dates_dict = json.loads(dates.text)
-    schedule = dates_dict["resultSets"][0]["rowSet"]
-    game_date = [g[2] for g in schedule if g[1] == game_df["game_id"].unique()[0]]
-    formatted_date = datetime.datetime.strptime(game_date[0], "%b %d, %Y")
-    game_df["game_date"] = formatted_date
+        if game_df["game_id"].unique()[0][3:5] == "99":
+            season = "1999-00"
+        else:
+            season = f"20{game_df['game_id'].unique()[0][3:5]}-{int(game_df['game_id'].unique()[0][3:5]) + 1}"
+        date_url = (
+            f"https://stats.nba.com/stats/teamgamelog?DateFrom=&DateTo=&LeagueID=&"
+            f"Season={season}"
+            f"&SeasonType={season_type}&TeamID={game_df['home_team_id'].unique()[0]}"
+        )
+        dates = requests.get(date_url, headers=USER_AGENT)
+        dates_dict = json.loads(dates.text)
+        schedule = dates_dict["resultSets"][0]["rowSet"]
+        game_date = [g[2] for g in schedule if g[1] == game_df["game_id"].unique()[0]]
+        formatted_date = datetime.datetime.strptime(game_date[0], "%b %d, %Y")
+        game_df["game_date"] = formatted_date
 
     return game_df
